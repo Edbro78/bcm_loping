@@ -41,7 +41,8 @@ const PLACES: [number, string][] = [
   [3.2, 'Gamle Bergen'],
   [6.2, 'Fjellveien'],
   [14, 'Lungegårdsvann'],
-  [19.2, 'Nordnes'],
+  [LAP - 2, 'Nordnes'],
+  [LAP, 'Bryggen'],
 ];
 
 export function Hero() {
@@ -229,10 +230,11 @@ function Spark() {
       <path className="track" d={d} />
       <path ref={runRef} className="run" d={d} />
       {PLACES.map(([k, name], i) => {
-        const anchor = i === 0 ? 'start' : i === PLACES.length - 1 ? 'end' : 'middle';
-        const x = i === 0 ? 8 : i === PLACES.length - 1 ? W - 8 : X(k);
+        const last = i === PLACES.length - 1;
+        const anchor = i === 0 ? 'start' : last ? 'end' : 'middle';
+        const x = i === 0 ? 8 : last ? W - 8 : X(k);
         return (
-          <g key={name}>
+          <g key={`${name}-${k}`}>
             <circle cx={X(k)} cy={Y(elevAt(course.points, k))} r={3} />
             <text x={x} y={H - 6} textAnchor={anchor}>
               {name}
