@@ -1,11 +1,12 @@
 import { useEffect, useRef } from 'react';
 import { usePlan, scrollToId } from '../state/plan';
 
-const LINKS: { id: 'plan' | 'profil' | 'splits' | 'mile' | 'band' | 'kart'; label: string; anchor: string }[] = [
+const LINKS: { id: 'distanse' | 'plan' | 'profil' | 'splits' | 'mile' | 'band' | 'kart'; label: string; anchor: string }[] = [
+  { id: 'distanse', label: 'Velge distanse', anchor: 'faner' },
   { id: 'plan', label: 'Tempoplan', anchor: 'faner' },
-  { id: 'profil', label: 'Høydeprofil', anchor: 'faner' },
   { id: 'splits', label: 'Mellomtider', anchor: 'faner' },
   { id: 'mile', label: 'Milepæler', anchor: 'faner' },
+  { id: 'profil', label: 'Høydeprofil', anchor: 'faner' },
   { id: 'band', label: 'Armbåndskort', anchor: 'faner' },
   { id: 'kart', label: 'Kart', anchor: 'kart' },
 ];

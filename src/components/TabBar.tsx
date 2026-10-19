@@ -1,12 +1,13 @@
-import { Timer, ChartLine, Table2, Flag, Watch } from 'lucide-react';
+import { Milestone, Timer, Table2, Flag, ChartLine, Watch } from 'lucide-react';
 import { usePlan } from '../state/plan';
 import type { PlanState } from '../state/plan';
 
 const TABS: { id: PlanState['view']; label: string; icon: typeof Timer }[] = [
+  { id: 'distanse', label: 'Velge distanse', icon: Milestone },
   { id: 'plan', label: 'Tempoplan', icon: Timer },
-  { id: 'profil', label: 'Høydeprofil', icon: ChartLine },
   { id: 'splits', label: 'Mellomtider', icon: Table2 },
   { id: 'mile', label: 'Milepæler', icon: Flag },
+  { id: 'profil', label: 'Høydeprofil', icon: ChartLine },
   { id: 'band', label: 'Armbåndskort', icon: Watch },
 ];
 

@@ -13,7 +13,7 @@ export type PlanState = {
   startHalf: string;
   startFull: string;
   tab: 'seg' | 'km';
-  view: 'plan' | 'profil' | 'splits' | 'mile' | 'band';
+  view: 'distanse' | 'plan' | 'profil' | 'splits' | 'mile' | 'band';
   layers: { drink: boolean; toilet: boolean; relay: boolean; terrain: boolean };
   view3d: boolean;
 };
@@ -45,7 +45,10 @@ function load(): PlanState {
     const dist = p.dist === 'full' ? 'full' : 'half';
     const split = p.split === 'negativ' || p.split === 'positiv' ? p.split : 'jevn';
     const hill = p.hill === 'fort' || p.hill === 'sakte' ? p.hill : 'middels';
-    const savedView = p.view === 'profil' || p.view === 'splits' || p.view === 'mile' || p.view === 'band' ? p.view : 'plan';
+    const savedView =
+      p.view === 'distanse' || p.view === 'profil' || p.view === 'splits' || p.view === 'mile' || p.view === 'band'
+        ? p.view
+        : 'plan';
     const view = p.tab === 'band' && savedView === 'splits' ? 'band' : savedView;
     const tab = p.tab === 'km' ? 'km' : 'seg';
     return {

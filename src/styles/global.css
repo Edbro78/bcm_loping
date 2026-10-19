@@ -171,13 +171,13 @@ button { cursor: pointer; }
 
 .tabs { position: sticky; top: var(--nav-h, calc(56px + env(safe-area-inset-top))); z-index: 900; padding: 12px 20px 8px; background: var(--bg-subtle); }
 .tabs-in {
-  max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(5, 1fr);
+  max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(6, 1fr);
   background: var(--c-bcm-100); border-radius: 12px; padding: 4px; gap: 4px;
 }
 .tabs-in button {
   display: flex; align-items: center; justify-content: center; gap: 8px;
   border: 0; background: transparent; color: var(--c-fjord-500); border-radius: 9px;
-  min-height: 44px; font-weight: 600; font-size: 15px;
+  min-height: 44px; font-weight: 600; font-size: 14px; text-align: center; line-height: 1.2;
 }
 .tabs-in button.is-on { background: #fff; color: var(--c-bcm-700); box-shadow: var(--shadow-float); }
 .panels { padding-top: 28px; }
@@ -212,6 +212,9 @@ button { cursor: pointer; }
 .card {
   background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 20px 24px;
 }
+.distanse-card { display: flex; justify-content: center; }
+.distanse-card .seg { width: max-content; }
+.distanse-card .seg button { min-width: 160px; }
 .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 16px; }
 .lbl { display: block; font-size: 13px; font-weight: 600; color: var(--c-fjord-500); margin: 16px 0 8px; }
 .target-row { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }

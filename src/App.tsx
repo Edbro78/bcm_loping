@@ -4,6 +4,7 @@ import { HoverProvider } from './state/active';
 import { TopNav } from './components/TopNav';
 import { Hero } from './components/Hero';
 import { TabBar } from './components/TabBar';
+import { DistanceChoice } from './components/DistanceChoice';
 import { TempoPlan } from './components/TempoPlan';
 import { ElevationProfile } from './components/ElevationProfile';
 import { Splits, Wristband } from './components/Splits';
@@ -24,6 +25,7 @@ function Shell() {
       <main id="innhold">
         <TabBar />
         <div className="wrap panels">
+          {state.view === 'distanse' && <DistanceChoice />}
           {state.view === 'plan' && <TempoPlan />}
           {state.view === 'profil' && <ElevationProfile />}
           {state.view === 'splits' && <Splits />}
