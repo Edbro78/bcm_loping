@@ -2,17 +2,23 @@
 
 export const LAP = 21.097;
 
-/** Vite legger public/ på roten. index.html (fil eller Live Server) bruker mappen public/. */
+/**
+ * Vite-devserveren legger public/ på roten.
+ * index.html via Live Server bruker mappen public/.
+ * Ferdig bygget side (Vercel) setter __BCM_PUBLIC__ til tom streng, fordi filene ligger ved siden av index.html.
+ */
 export function publicUrl(path: string): string {
   const clean = path.replace(/^\//, '');
-  const vite =
-    typeof window !== 'undefined' &&
-    Boolean((window as Window & { __BCM_VITE__?: boolean }).__BCM_VITE__);
-  if (vite) return `/${clean}`;
-  if (typeof location === 'undefined') return `/${clean}`;
+  const w =
+    typeof window !== 'undefined'
+      ? (window as Window & { __BCM_VITE__?: boolean; __BCM_PUBLIC__?: string })
+      : undefined;
+  if (w?.__BCM_VITE__) return `/${clean}`;
+  if (!w || typeof location === 'undefined') return `/${clean}`;
   const href = location.href.split('#')[0].split('?')[0];
   const dir = href.slice(0, href.lastIndexOf('/') + 1);
-  return `${dir}public/${clean}`;
+  const prefix = w.__BCM_PUBLIC__ ?? 'public/';
+  return `${dir}${prefix}${clean}`;
 }
 
 export const GPX_URL = publicUrl('data/bcm-course.gpx');

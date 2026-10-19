@@ -1,9 +1,28 @@
+import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { defineConfig, type Plugin } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
+
+/** Vercel publiserer dist/. index.html der peker på bunten, og public/ er kopiert inn ved siden av. */
+function publishIndex(): Plugin {
+  return {
+    name: 'publish-index',
+    apply: 'build',
+    async closeBundle() {
+      const html = await fs.readFile(path.resolve(root, 'index.html'), 'utf8');
+      const out = html
+        .replace('./dist/dashboard.css', './dashboard.css')
+        .replace(
+          '<script src="./dist/dashboard.js"></script>',
+          '<script>window.__BCM_PUBLIC__="";</script>\n    <script src="./dashboard.js"></script>',
+        );
+      await fs.writeFile(path.resolve(root, 'dist/index.html'), out);
+    },
+  };
+}
 
 /** Dev-serveren kompilerer TypeScript. Filen på disk laster den ferdigbygde bunten. */
 function devEntry(): Plugin {
@@ -22,13 +41,13 @@ function devEntry(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [react(), devEntry()],
+  plugins: [react(), devEntry(), publishIndex()],
   base: './',
   publicDir: 'public',
   build: {
     outDir: 'dist',
     emptyOutDir: true,
-    copyPublicDir: false,
+    copyPublicDir: true,
     cssCodeSplit: false,
     rollupOptions: {
       input: path.resolve(root, 'src/main.tsx'),

@@ -41,7 +41,7 @@ function load(): PlanState {
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return PLAN_DEFAULT;
-    const p = JSON.parse(raw) as Partial<PlanState>;
+    const p = JSON.parse(raw) as Omit<Partial<PlanState>, 'tab'> & { tab?: string };
     const dist = p.dist === 'full' ? 'full' : 'half';
     const split = p.split === 'negativ' || p.split === 'positiv' ? p.split : 'jevn';
     const hill = p.hill === 'fort' || p.hill === 'sakte' ? p.hill : 'middels';
