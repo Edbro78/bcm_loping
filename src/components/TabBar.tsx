@@ -4,8 +4,8 @@ import type { PlanState } from '../state/plan';
 
 const TABS: { id: PlanState['view']; label: string; icon: typeof Timer }[] = [
   { id: 'distanse', label: 'Velge distanse', icon: Milestone },
-  { id: 'plan', label: 'Tempoplan', icon: Timer },
-  { id: 'splits', label: 'Mellomtider', icon: Table2 },
+  { id: 'plan', label: 'Måltiden din', icon: Timer },
+  { id: 'splits', label: 'Anbefalt plan for løpet', icon: Table2 },
   { id: 'mile', label: 'Milepæler', icon: Flag },
   { id: 'profil', label: 'Høydeprofil', icon: ChartLine },
   { id: 'band', label: 'Armbåndskort', icon: Watch },

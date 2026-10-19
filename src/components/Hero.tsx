@@ -39,9 +39,9 @@ function Countdown({ dist }: { dist: 'half' | 'full' }) {
 
 const STEPS: { icon: LucideIcon; text: string }[] = [
   { icon: Flag, text: 'Velge distanse (hel eller halv)' },
-  { icon: Timer, text: 'Måltiden din' },
-  { icon: Route, text: 'Anbefalt plan for løpet, km for km' },
-  { icon: CalendarRange, text: 'Anbefalt konkret trening de siste 90 dagene før løpet' },
+  { icon: Timer, text: 'Ønsket sluttid' },
+  { icon: Route, text: 'Anbefalt løpeplan' },
+  { icon: CalendarRange, text: 'Anbefalte milepæler siste 90 dager av treningen' },
 ];
 
 const PLACES: [number, string][] = [

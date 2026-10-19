@@ -3,8 +3,8 @@ import { usePlan, scrollToId } from '../state/plan';
 
 const LINKS: { id: 'distanse' | 'plan' | 'profil' | 'splits' | 'mile' | 'band' | 'kart'; label: string; anchor: string }[] = [
   { id: 'distanse', label: 'Velge distanse', anchor: 'faner' },
-  { id: 'plan', label: 'Tempoplan', anchor: 'faner' },
-  { id: 'splits', label: 'Mellomtider', anchor: 'faner' },
+  { id: 'plan', label: 'Måltiden din', anchor: 'faner' },
+  { id: 'splits', label: 'Anbefalt plan for løpet', anchor: 'faner' },
   { id: 'mile', label: 'Milepæler', anchor: 'faner' },
   { id: 'profil', label: 'Høydeprofil', anchor: 'faner' },
   { id: 'band', label: 'Armbåndskort', anchor: 'faner' },
