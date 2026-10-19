@@ -106,6 +106,26 @@ button { cursor: pointer; }
 .kicker { font-size: 13px; font-weight: 600; letter-spacing: 0.04em; color: #fff; margin-bottom: 8px; }
 .kicker.ink { color: var(--c-bcm-700); }
 .lead { font-size: 18px; line-height: 1.55; color: rgb(255 255 255 / 0.94); max-width: 38rem; }
+.steps {
+  list-style: none; display: flex; gap: 10px; margin: 0 0 20px; padding: 0; max-width: 40rem;
+}
+.steps li {
+  flex: 1; min-width: 0; position: relative;
+  display: flex; flex-direction: column; gap: 10px;
+  background: #fff; color: var(--c-fjord); border-radius: 14px; padding: 12px 12px 14px;
+}
+.steps li:not(:last-child)::after {
+  content: ""; position: absolute; z-index: 1; right: -8px; top: 50%;
+  width: 8px; height: 8px; margin-top: -4px;
+  border-top: 2px solid #fff; border-right: 2px solid #fff; transform: rotate(45deg);
+}
+.step-top { display: flex; align-items: center; justify-content: space-between; color: var(--c-bcm); }
+.step-n {
+  width: 22px; height: 22px; border-radius: 50%; background: var(--c-bcm); color: #fff;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; line-height: 1;
+}
+.step-text { font-size: 14px; font-weight: 650; line-height: 1.3; text-wrap: balance; }
 .hero-side { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
 .count-label { color: rgb(255 255 255 / 0.94); margin: 0; }
 .count-boxes { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -435,6 +455,10 @@ tr.cut-band td, tr.steep-note td { text-align: left; background: #f6dedb; color:
   .kpis.three { grid-template-columns: 1fr; }
   button, .btn, .seg button { min-height: 44px; }
   .hero { padding: 28px 16px 20px; }
+  .steps { flex-direction: column; max-width: none; }
+  .steps li:not(:last-child)::after {
+    right: auto; left: 18px; top: auto; bottom: -8px; margin-top: 0; transform: rotate(135deg);
+  }
   .seg.on-dark { max-width: 100%; }
   .seg.on-dark button { min-width: 0; flex: 1; padding: 8px 12px; }
   .count-box { flex: 1 1 30%; min-width: 96px; padding: 10px 12px; }
