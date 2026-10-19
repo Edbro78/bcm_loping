@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { CalendarRange, Route, Timer, type LucideIcon } from 'lucide-react';
+import { CalendarRange, Flag, Route, Timer, type LucideIcon } from 'lucide-react';
 import { RACE_START } from '../config';
 import { LAP } from '../config';
 import { elevAt } from '../lib/gpx';
@@ -38,6 +38,7 @@ function Countdown({ dist }: { dist: 'half' | 'full' }) {
 }
 
 const STEPS: { icon: LucideIcon; text: string }[] = [
+  { icon: Flag, text: 'Velge distanse (hel eller halv)' },
   { icon: Timer, text: 'Måltiden din' },
   { icon: Route, text: 'Anbefalt plan for løpet, km for km' },
   { icon: CalendarRange, text: 'Anbefalt konkret trening de siste 90 dagene før løpet' },
@@ -62,17 +63,6 @@ export function Hero() {
         <div>
           <p className="kicker">Fjordkraft Bergen City Marathon</p>
           <h1>BCM løpeguide, tempoplanlegger og milepæler</h1>
-          <ol className="steps" aria-label="Slik bruker du verktøyet">
-            {STEPS.map((step, i) => (
-              <li key={step.text}>
-                <span className="step-top">
-                  <span className="step-n">{i + 1}</span>
-                  <step.icon size={18} strokeWidth={1.75} aria-hidden="true" />
-                </span>
-                <span className="step-text">{step.text}</span>
-              </li>
-            ))}
-          </ol>
           <div className="seg on-dark" role="group" aria-label="Distanse">
             <button type="button" aria-pressed={state.dist === 'half'} onClick={() => patch({ dist: 'half' })}>
               Halvmaraton
@@ -97,6 +87,17 @@ export function Hero() {
             </p>
           )}
         </div>
+        <ol className="steps" aria-label="Slik bruker du verktøyet">
+          {STEPS.map((step, i) => (
+            <li key={step.text}>
+              <span className="step-ico">
+                <step.icon size={22} strokeWidth={1.75} aria-hidden="true" />
+                <span className="step-n">{i + 1}</span>
+              </span>
+              <span className="step-text">{step.text}</span>
+            </li>
+          ))}
+        </ol>
       </div>
       {course.points.length > 10 && <Spark />}
     </section>
