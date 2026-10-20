@@ -11,28 +11,42 @@ import { Splits, Wristband } from './components/Splits';
 import { MilePage } from './components/MilePage';
 import { CourseMap } from './components/CourseMap';
 import { Footer } from './components/Footer';
+import { AboutPage } from './components/AboutPage';
+import { ContactPage } from './components/ContactPage';
+import { PrivacyPage } from './components/PrivacyPage';
 import { usePlan } from './state/plan';
 
 function Shell() {
   const { state } = usePlan();
+  const page = state.view === 'om' || state.view === 'kontakt' || state.view === 'personvern';
   return (
     <>
       <a className="skip" href="#innhold">
         Hopp til innhold
       </a>
       <TopNav />
-      <Hero />
+      {!page && <Hero />}
       <main id="innhold">
-        <TabBar />
-        <div className="wrap panels">
-          {state.view === 'distanse' && <DistanceChoice />}
-          {state.view === 'plan' && <TempoPlan />}
-          {state.view === 'profil' && <ElevationProfile />}
-          {state.view === 'splits' && <Splits />}
-          {state.view === 'mile' && <MilePage />}
-          {state.view === 'band' && <Wristband />}
-        </div>
-        {state.view === 'profil' && <CourseMap />}
+        {state.view === 'om' ? (
+          <AboutPage />
+        ) : state.view === 'kontakt' ? (
+          <ContactPage />
+        ) : state.view === 'personvern' ? (
+          <PrivacyPage />
+        ) : (
+          <>
+            <TabBar />
+            <div className="wrap panels">
+              {state.view === 'distanse' && <DistanceChoice />}
+              {state.view === 'plan' && <TempoPlan />}
+              {state.view === 'profil' && <ElevationProfile />}
+              {state.view === 'splits' && <Splits />}
+              {state.view === 'mile' && <MilePage />}
+              {state.view === 'band' && <Wristband />}
+            </div>
+            {state.view === 'profil' && <CourseMap />}
+          </>
+        )}
         <Footer />
       </main>
     </>

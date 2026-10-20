@@ -1,4 +1,7 @@
+import { scrollToId, usePlan } from '../state/plan';
+
 export function Footer() {
+  const { patch } = usePlan();
   return (
     <footer className="site">
       <div className="wrap">
@@ -8,6 +11,18 @@ export function Footer() {
         </p>
         <p>
           Uoffisiell planleggingsguide. Tempomodellen er en forenkling, og høydedata fra GPS støyer. Lytt til kroppen på løpsdagen – planen er et utgangspunkt, ikke en fasit.
+        </p>
+        <p>
+          <button
+            type="button"
+            className="text-btn"
+            onClick={() => {
+              patch({ view: 'personvern' });
+              window.setTimeout(() => scrollToId('personvern'), 40);
+            }}
+          >
+            Personvernerklæring
+          </button>
         </p>
       </div>
     </footer>

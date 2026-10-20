@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { usePlan, scrollToId } from '../state/plan';
 
-const LINKS: { id: 'distanse' | 'plan' | 'profil' | 'splits' | 'mile' | 'band' | 'kart'; label: string; anchor: string }[] = [
+const LINKS: { id: 'distanse' | 'plan' | 'profil' | 'splits' | 'mile' | 'band' | 'kart' | 'om' | 'kontakt' | 'personvern'; label: string; anchor: string }[] = [
   { id: 'distanse', label: 'Velge distanse', anchor: 'faner' },
   { id: 'plan', label: 'Måltiden din', anchor: 'faner' },
   { id: 'splits', label: 'Anbefalt plan for løpet', anchor: 'faner' },
@@ -9,6 +9,9 @@ const LINKS: { id: 'distanse' | 'plan' | 'profil' | 'splits' | 'mile' | 'band' |
   { id: 'profil', label: 'Høydeprofil', anchor: 'faner' },
   { id: 'band', label: 'Armbåndskort', anchor: 'faner' },
   { id: 'kart', label: 'Kart', anchor: 'kart' },
+  { id: 'om', label: 'Om siden', anchor: 'om-siden' },
+  { id: 'kontakt', label: 'Kontakt oss', anchor: 'kontakt' },
+  { id: 'personvern', label: 'Personvern', anchor: 'personvern' },
 ];
 
 export function TopNav() {
@@ -51,7 +54,9 @@ export function TopNav() {
               onClick={() => {
                 if (l.id === 'kart') patch({ view: 'profil' });
                 else patch({ view: l.id });
-                requestAnimationFrame(() => scrollToId(l.anchor));
+                const anchor = l.anchor;
+                if (l.id === 'om' || l.id === 'kontakt' || l.id === 'personvern') window.setTimeout(() => scrollToId(anchor), 40);
+                else requestAnimationFrame(() => scrollToId(anchor));
               }}
             >
               {l.label}
