@@ -78,7 +78,7 @@ export function TempoPlan() {
 
   return (
     <section className="section" aria-labelledby="tempo-tittel">
-      <h2 id="tempo-tittel">Tempoplanlegger</h2>
+      <h2 id="tempo-tittel">Ønsket sluttid</h2>
       <p className="intro">
         Planen fordeler tiden etter jevn innsats i bakkene, ikke jevn fart. Alt beregnes på nytt mens du endrer, og lagres på denne enheten.
       </p>

@@ -4,7 +4,7 @@ import { RACE_START } from '../config';
 import { LAP } from '../config';
 import { elevAt } from '../lib/gpx';
 import { useCourse } from '../state/course';
-import { usePlan } from '../state/plan';
+import { scrollToId, usePlan, type PlanState } from '../state/plan';
 
 function Countdown({ dist }: { dist: 'half' | 'full' }) {
   const [now, setNow] = useState(() => Date.now());
@@ -37,11 +37,11 @@ function Countdown({ dist }: { dist: 'half' | 'full' }) {
   );
 }
 
-const STEPS: { icon: LucideIcon; text: string }[] = [
-  { icon: Flag, text: 'Velge distanse (hel eller halv)' },
-  { icon: Timer, text: 'Ønsket sluttid' },
-  { icon: Route, text: 'Anbefalt løpeplan' },
-  { icon: CalendarRange, text: 'Anbefalte milepæler siste 90 dager av treningen' },
+const STEPS: { icon: LucideIcon; text: string; view: PlanState['view'] }[] = [
+  { icon: Flag, text: 'Velge distanse (hel eller halv)', view: 'distanse' },
+  { icon: Timer, text: 'Ønsket sluttid', view: 'plan' },
+  { icon: Route, text: 'Anbefalt løpeplan', view: 'splits' },
+  { icon: CalendarRange, text: 'Anbefalte milepæler siste 90 dager av treningen', view: 'mile' },
 ];
 
 const PLACES: [number, string][] = [
@@ -57,20 +57,17 @@ export function Hero() {
   const { state, patch } = usePlan();
   const course = useCourse();
 
+  function goToStep(view: PlanState['view']) {
+    patch({ view });
+    requestAnimationFrame(() => scrollToId('faner'));
+  }
+
   return (
     <section className="hero">
       <div className="hero-grid">
         <div>
           <p className="kicker">Fjordkraft Bergen City Marathon</p>
           <h1>BCM løpeguide, tempoplanlegger og milepæler</h1>
-          <div className="seg on-dark" role="group" aria-label="Distanse">
-            <button type="button" aria-pressed={state.dist === 'half'} onClick={() => patch({ dist: 'half' })}>
-              Halvmaraton
-            </button>
-            <button type="button" aria-pressed={state.dist === 'full'} onClick={() => patch({ dist: 'full' })}>
-              Maraton
-            </button>
-          </div>
         </div>
         <div className="hero-side">
           <Countdown dist={state.dist} />
@@ -90,11 +87,13 @@ export function Hero() {
         <ol className="steps" aria-label="Slik bruker du verktøyet">
           {STEPS.map((step, i) => (
             <li key={step.text}>
-              <span className="step-ico">
-                <step.icon size={22} strokeWidth={1.75} aria-hidden="true" />
-                <span className="step-n">{i + 1}</span>
-              </span>
-              <span className="step-text">{step.text}</span>
+              <button type="button" className="step-card" onClick={() => goToStep(step.view)}>
+                <span className="step-ico">
+                  <step.icon size={22} strokeWidth={1.75} aria-hidden="true" />
+                  <span className="step-n">{i + 1}</span>
+                </span>
+                <span className="step-text">{step.text}</span>
+              </button>
             </li>
           ))}
         </ol>

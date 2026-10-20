@@ -70,7 +70,7 @@ export function Splits() {
   if (!plan) return <p className="intro">Laster mellomtider…</p>;
   return (
     <section className="section" aria-labelledby="mellom-tittel">
-      <h2 id="mellom-tittel">Delsegmenter og mellomtider</h2>
+      <h2 id="mellom-tittel">Anbefalt løpeplan</h2>
       <div className="legend-row" aria-hidden="true">
         <span><i className="swatch pace" /> Målfart</span>
         <span><i className="swatch gap" /> GAP</span>

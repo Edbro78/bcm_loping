@@ -1,11 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { usePlan, scrollToId } from '../state/plan';
 
-const LINKS: { id: 'distanse' | 'plan' | 'profil' | 'splits' | 'mile' | 'band' | 'kart' | 'om' | 'kontakt' | 'personvern'; label: string; anchor: string }[] = [
-  { id: 'distanse', label: 'Velge distanse', anchor: 'faner' },
-  { id: 'plan', label: 'Måltiden din', anchor: 'faner' },
-  { id: 'splits', label: 'Anbefalt plan for løpet', anchor: 'faner' },
-  { id: 'mile', label: 'Milepæler', anchor: 'faner' },
+const LINKS: { id: 'profil' | 'band' | 'kart' | 'om' | 'kontakt' | 'personvern'; label: string; anchor: string }[] = [
   { id: 'profil', label: 'Høydeprofil', anchor: 'faner' },
   { id: 'band', label: 'Armbåndskort', anchor: 'faner' },
   { id: 'kart', label: 'Kart', anchor: 'kart' },
@@ -63,14 +59,6 @@ export function TopNav() {
             </button>
           ))}
         </nav>
-        <div className="seg compact" role="group" aria-label="Distanse">
-          <button type="button" aria-pressed={state.dist === 'half'} onClick={() => patch({ dist: 'half' })}>
-            Halv
-          </button>
-          <button type="button" aria-pressed={state.dist === 'full'} onClick={() => patch({ dist: 'full' })}>
-            Hel
-          </button>
-        </div>
       </div>
     </header>
   );

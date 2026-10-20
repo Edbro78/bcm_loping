@@ -64,7 +64,9 @@ function Formkrav() {
   return (
     <section className="section" aria-labelledby="mile-tittel">
       <p className="kicker ink">De siste 90 dagene</p>
-      <h2 id="mile-tittel">Milepæler for {distName} på {fmtT(plan.input.T)}</h2>
+      <h2 id="mile-tittel">
+        Anbefalte milepæler for {distName} på {fmtT(plan.input.T)}
+      </h2>
       <p className="intro">
         Tempoplanen din sikter mot {fmtT(plan.input.T)}. Kravene under er hentet fra VDOT- og Riegel-tabellen for {distName}
         {how}. De oppdateres når du endrer måltid i tempoplanen.
