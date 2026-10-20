@@ -172,14 +172,56 @@ button { cursor: pointer; }
 .steps li {
   min-width: 0; position: relative; display: flex;
 }
-.step-card {
-  width: 100%; height: 100%; min-height: 8.25rem; border: 0; cursor: pointer; font: inherit; text-align: center;
-  display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 12px;
-  background: #fff; color: var(--c-fjord); border-radius: 16px; padding: 18px 14px 16px;
-  box-shadow: 0 10px 24px rgb(122 32 0 / 0.14);
-  transition: transform 0.15s var(--ease), box-shadow 0.15s var(--ease);
+@keyframes step-card-pulse {
+  0%, 100% {
+    box-shadow:
+      0 10px 24px rgb(122 32 0 / 0.14),
+      0 0 0 0 rgb(240 90 26 / 0.45);
+    border-color: rgb(240 90 26 / 0.55);
+  }
+  50% {
+    box-shadow:
+      0 14px 32px rgb(122 32 0 / 0.2),
+      0 0 0 6px rgb(240 90 26 / 0.22);
+    border-color: rgb(240 90 26 / 0.95);
+  }
 }
-.step-card:hover { transform: translateY(-2px); box-shadow: 0 14px 28px rgb(122 32 0 / 0.18); }
+@keyframes step-action-nudge {
+  0%, 100% { transform: translateX(0); opacity: 0.88; }
+  50% { transform: translateX(3px); opacity: 1; }
+}
+.step-card {
+  position: relative; width: 100%; height: 100%; min-height: 8.25rem; cursor: pointer; font: inherit; text-align: center;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 8px;
+  background: #fff; color: var(--c-fjord); border-radius: 16px; padding: 18px 14px 12px;
+  border: 2px solid rgb(240 90 26 / 0.65);
+  box-shadow: 0 10px 24px rgb(122 32 0 / 0.14);
+  transition: transform 0.15s var(--ease), box-shadow 0.15s var(--ease), border-color 0.15s var(--ease);
+  animation: step-card-pulse 2.4s ease-in-out infinite;
+}
+.steps li:nth-child(1) .step-card { animation-delay: 0s; }
+.steps li:nth-child(2) .step-card { animation-delay: 0.4s; }
+.steps li:nth-child(3) .step-card { animation-delay: 0.8s; }
+.steps li:nth-child(4) .step-card { animation-delay: 1.2s; }
+.step-card:hover,
+.step-card:focus-visible {
+  animation: none;
+  transform: translateY(-3px);
+  border-color: var(--c-bcm);
+  box-shadow: 0 16px 36px rgb(122 32 0 / 0.22), 0 0 0 4px rgb(240 90 26 / 0.35);
+  outline: none;
+}
+.step-action {
+  display: inline-flex; align-items: center; gap: 4px; margin-top: auto;
+  font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--c-bcm);
+  animation: step-action-nudge 2.4s ease-in-out infinite;
+}
+.step-action::after {
+  content: "→"; font-size: 14px; line-height: 1;
+}
+.step-card:hover .step-action,
+.step-card:focus-visible .step-action { animation: none; opacity: 1; transform: translateX(4px); }
 .steps li:not(:last-child)::after {
   content: ""; position: absolute; z-index: 1; right: -11px; top: 50%;
   width: 8px; height: 8px;
@@ -555,6 +597,8 @@ tr.cut-band td, tr.steep-note td { text-align: left; background: #f6dedb; color:
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; }
+  .step-card { animation: none; border-color: var(--c-bcm); }
+  .step-action { animation: none; }
   .spark path.run { stroke-dashoffset: 0; }
   html { scroll-behavior: auto; }
 }

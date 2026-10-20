@@ -87,12 +87,20 @@ export function Hero() {
         <ol className="steps" aria-label="Slik bruker du verktøyet">
           {STEPS.map((step, i) => (
             <li key={step.text}>
-              <button type="button" className="step-card" onClick={() => goToStep(step.view)}>
+              <button
+                type="button"
+                className="step-card"
+                onClick={() => goToStep(step.view)}
+                aria-label={`Steg ${i + 1}: ${step.text}. Trykk for å åpne.`}
+              >
                 <span className="step-ico">
                   <step.icon size={22} strokeWidth={1.75} aria-hidden="true" />
                   <span className="step-n">{i + 1}</span>
                 </span>
                 <span className="step-text">{step.text}</span>
+                <span className="step-action" aria-hidden="true">
+                  Trykk her
+                </span>
               </button>
             </li>
           ))}
