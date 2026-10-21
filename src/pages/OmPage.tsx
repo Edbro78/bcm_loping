@@ -51,6 +51,9 @@ export function OmPage() {
         <p>
           Domene og merkevare «BCM løpeguide» brukes her som beskrivelse av innholdet, ikke som løpsarrangør eller sponsor. Løpets offisielle navn nevnes kun for at du skal finne riktig helg og riktig by.
         </p>
+        <p>
+          Tilbakemeldinger om feil i tekst, kart eller modell er velkomne. Jo mer presis kilometer og skjermbilde du sender, jo raskere kan feilen verifiseres og rettes i neste oppdatering.
+        </p>
       </div>
     </article>
   );

@@ -13,6 +13,7 @@ export type PlanState = {
   startHalf: string;
   startFull: string;
   tab: 'seg' | 'km';
+  view: 'distanse' | 'plan' | 'profil' | 'splits' | 'mile' | 'band';
   layers: { drink: boolean; toilet: boolean; relay: boolean; terrain: boolean };
   view3d: boolean;
 };
@@ -31,6 +32,7 @@ export const PLAN_DEFAULT: PlanState = {
   startHalf: '09:00',
   startFull: '07:45',
   tab: 'seg',
+  view: 'plan',
   layers: { drink: true, toilet: true, relay: true, terrain: true },
   view3d: false,
 };
@@ -44,6 +46,15 @@ function load(): PlanState {
     const dist = p.dist === 'full' ? 'full' : 'half';
     const split = p.split === 'negativ' || p.split === 'positiv' ? p.split : 'jevn';
     const hill = p.hill === 'fort' || p.hill === 'sakte' ? p.hill : 'middels';
+    const savedView =
+      p.view === 'distanse' ||
+      p.view === 'profil' ||
+      p.view === 'splits' ||
+      p.view === 'mile' ||
+      p.view === 'band'
+        ? p.view
+        : 'plan';
+    const view = p.tab === 'band' && savedView === 'splits' ? 'band' : savedView;
     const tab = p.tab === 'km' ? 'km' : 'seg';
     return {
       ...PLAN_DEFAULT,
@@ -51,6 +62,7 @@ function load(): PlanState {
       dist,
       split,
       hill,
+      view,
       tab,
       sigma: typeof p.sigma === 'number' ? p.sigma : 2,
       stopOn: typeof p.stopOn === 'number' ? Math.max(0, Math.min(120, p.stopOn)) : 10,
