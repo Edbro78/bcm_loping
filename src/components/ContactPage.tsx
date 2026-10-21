@@ -35,7 +35,7 @@ export function ContactPage() {
     <article className="contact wrap" id="kontakt">
       <div className="contact-in">
         <p className="kicker ink">BCM 2027</p>
-        <h1>Kontakt oss</h1>
+        <h1>Kontakt</h1>
         <p className="intro">
           Send et spørsmål om løypa, tempoplanen eller siden. Meldingen åpnes i e-postprogrammet ditt, ferdig adressert, og sendes derfra.
         </p>

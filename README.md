@@ -1,6 +1,6 @@
 # Løypeguide og tempoplan · BCM 2027
 
-Enkeltside for Fjordkraft Bergen City Marathon, lørdag 24. april 2027. Løypa tegnes fra GPX-fila, og tempoplanen regnes fra høydeprofilen. Kartfliser ligger lokalt. Ingen API-nøkler.
+Uavhengig løpeguide for Bergen City Marathon 2027 (lørdag 24. april). Flere innholdssider med prerendered HTML, tempokalkulator, kart og høydeprofil fra GPX. Deployes som statisk side på Vercel. Ikke tilknyttet arrangøren.
 
 Farger, skrift (Archivo) og former følger `design.bcm.md`. Milepæltabellen følger `milepæler fra deep r.txt` (VDOT og Riegel).
 

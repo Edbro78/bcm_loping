@@ -1,5 +1,4 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import bundledGpx from '../../public/data/bcm-course.gpx?raw';
 import { GPX_URL } from '../config';
 import { approximateCourse, parseGpx, type Pt } from '../lib/gpx';
 
@@ -52,15 +51,30 @@ async function readDefault(): Promise<{ points: Pt[]; error: string | null }> {
   } catch {
     /* Chrome tillater ikke å lese lokale filer fra en åpnet HTML-fil. */
   }
-  if (location.protocol === 'file:') return parseGpx(bundledGpx);
+  if (location.protocol === 'file:') return parseGpx(bundledXml());
   return { points: [], error: 'Fant ikke nok sporpunkter i filen.' };
 }
 
+function bundledXml(): string {
+  if (typeof __BCM_BUNDLED_GPX__ !== 'undefined' && __BCM_BUNDLED_GPX__) return __BCM_BUNDLED_GPX__;
+  const g = (globalThis as { __BCM_BUNDLED_GPX__?: string }).__BCM_BUNDLED_GPX__;
+  return g ?? '';
+}
+
+function initialFromBundled(): { points: Pt[]; status: CourseStatus; error: string | null } {
+  const res = parseGpx(bundledXml());
+  if (!res.error && res.points.length >= 50) {
+    return { points: res.points, status: 'ok', error: null };
+  }
+  return { points: approximateCourse(), status: 'estimated', error: res.error };
+}
+
 export function CourseProvider({ children }: { children: ReactNode }) {
-  const [status, setStatus] = useState<CourseStatus>('loading');
-  const [points, setPoints] = useState<Pt[]>([]);
+  const boot = initialFromBundled();
+  const [status, setStatus] = useState<CourseStatus>(boot.status);
+  const [points, setPoints] = useState<Pt[]>(boot.points);
   const [name, setName] = useState('bcm-course.gpx');
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(boot.error);
   const [custom, setCustom] = useState(false);
 
   function applyTrack(res: { points: Pt[]; error: string | null }, fileName: string, isCustom: boolean) {

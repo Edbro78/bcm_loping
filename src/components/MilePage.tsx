@@ -26,16 +26,16 @@ export function MilePage() {
   if (!plan) return <p className="intro">Laster milepæler…</p>;
   return (
     <div className="mile">
-      <Formkrav />
-      <Stages />
-      <Aid />
-      <Weather />
-      <Practical />
+      <MileFormkrav />
+      <MileStages />
+      <MileAid />
+      <MileWeather />
+      <MilePractical />
     </div>
   );
 }
 
-function Formkrav() {
+export function MileFormkrav() {
   const { plan } = useActivePlan();
   if (!plan) return null;
   const hit = lookupMilestones(plan.input.full, plan.input.T);
@@ -191,7 +191,7 @@ function Formkrav() {
   );
 }
 
-function Stages() {
+export function MileStages() {
   const { plan } = useActivePlan();
   if (!plan) return null;
   return (
@@ -243,7 +243,7 @@ const DRINKS: { km: number; name: string; note?: string; fullOnly?: boolean }[] 
   { km: 19, name: 'Nordnes skole' },
 ];
 
-function Aid() {
+export function MileAid() {
   const { plan } = useActivePlan();
   if (!plan) return null;
   const full = plan.input.full;
@@ -307,7 +307,7 @@ function Aid() {
 
 type Hour = { h: string; temp: number; mm: number; wind: number; dir: number };
 
-function Weather() {
+export function MileWeather() {
   const [hours, setHours] = useState<Hour[] | null>(null);
   const [fromForecast, setFromForecast] = useState(false);
   const daysToWindow = Math.max(0, Math.ceil((FORECAST_FROM.getTime() - Date.now()) / 86400000));
@@ -479,7 +479,7 @@ async function loadOm(): Promise<Hour[]> {
   }
 }
 
-function Practical() {
+export function MilePractical() {
   const { state } = usePlan();
   return (
     <section className="section">

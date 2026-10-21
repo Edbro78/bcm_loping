@@ -1,64 +1,38 @@
+import { Routes, Route } from 'react-router-dom';
 import { PlanProvider } from './state/plan';
 import { CourseProvider } from './state/course';
 import { HoverProvider } from './state/active';
-import { TopNav } from './components/TopNav';
-import { Hero } from './components/Hero';
-import { TabBar } from './components/TabBar';
-import { DistanceChoice } from './components/DistanceChoice';
-import { TempoPlan } from './components/TempoPlan';
-import { ElevationProfile } from './components/ElevationProfile';
-import { Splits, Wristband } from './components/Splits';
-import { MilePage } from './components/MilePage';
-import { CourseMap } from './components/CourseMap';
-import { Footer } from './components/Footer';
-import { AboutPage } from './components/AboutPage';
-import { ContactPage } from './components/ContactPage';
-import { PrivacyPage } from './components/PrivacyPage';
-import { usePlan } from './state/plan';
-
-function Shell() {
-  const { state } = usePlan();
-  const page = state.view === 'om' || state.view === 'kontakt' || state.view === 'personvern';
-  return (
-    <>
-      <a className="skip" href="#innhold">
-        Hopp til innhold
-      </a>
-      <TopNav />
-      {!page && <Hero />}
-      <main id="innhold">
-        {state.view === 'om' ? (
-          <AboutPage />
-        ) : state.view === 'kontakt' ? (
-          <ContactPage />
-        ) : state.view === 'personvern' ? (
-          <PrivacyPage />
-        ) : (
-          <>
-            <TabBar />
-            <div className="wrap panels">
-              {state.view === 'distanse' && <DistanceChoice />}
-              {state.view === 'plan' && <TempoPlan />}
-              {state.view === 'profil' && <ElevationProfile />}
-              {state.view === 'splits' && <Splits />}
-              {state.view === 'mile' && <MilePage />}
-              {state.view === 'band' && <Wristband />}
-            </div>
-            {state.view === 'profil' && <CourseMap />}
-          </>
-        )}
-        <Footer />
-      </main>
-    </>
-  );
-}
+import { SiteLayout } from './components/SiteLayout';
+import { NotFoundPage } from './components/NotFoundPage';
+import { HomePage } from './pages/HomePage';
+import { LoypeguidePage } from './pages/LoypeguidePage';
+import { TempoplanPage } from './pages/TempoplanPage';
+import { TempostrategiPage } from './pages/TempostrategiPage';
+import { PraktiskPage } from './pages/PraktiskPage';
+import { TreningPage } from './pages/TreningPage';
+import { OmPage } from './pages/OmPage';
+import { KontaktPage } from './pages/KontaktPage';
+import { PersonvernPage } from './pages/PersonvernPage';
 
 export function App() {
   return (
     <PlanProvider>
       <CourseProvider>
         <HoverProvider>
-          <Shell />
+          <Routes>
+            <Route element={<SiteLayout />}>
+              <Route index element={<HomePage />} />
+              <Route path="loypeguide" element={<LoypeguidePage />} />
+              <Route path="tempoplan" element={<TempoplanPage />} />
+              <Route path="tempostrategi" element={<TempostrategiPage />} />
+              <Route path="praktisk" element={<PraktiskPage />} />
+              <Route path="trening" element={<TreningPage />} />
+              <Route path="om" element={<OmPage />} />
+              <Route path="kontakt" element={<KontaktPage />} />
+              <Route path="personvern" element={<PersonvernPage />} />
+            </Route>
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
         </HoverProvider>
       </CourseProvider>
     </PlanProvider>

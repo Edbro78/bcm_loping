@@ -5,6 +5,7 @@ import { defineConfig, type Plugin } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
+const bundledGpx = await fs.readFile(path.resolve(root, 'public/data/bcm-course.gpx'), 'utf8');
 
 /** Vercel publiserer dist/. index.html der peker på bunten, og public/ er kopiert inn ved siden av. */
 function publishIndex(): Plugin {
@@ -42,6 +43,9 @@ function devEntry(): Plugin {
 
 export default defineConfig({
   plugins: [react(), devEntry(), publishIndex()],
+  define: {
+    __BCM_BUNDLED_GPX__: JSON.stringify(bundledGpx),
+  },
   base: './',
   publicDir: 'public',
   build: {

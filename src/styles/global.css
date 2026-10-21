@@ -75,11 +75,26 @@ button { cursor: pointer; }
 .brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 15px; text-decoration: none; color: var(--c-bcm); flex: 1 0 auto; min-height: 44px; }
 .brand:hover { color: var(--c-bcm-700); }
 .nav-links { order: 3; display: flex; gap: 4px; flex: 1 0 100%; min-width: 0; flex-wrap: wrap; overflow: visible; }
+.nav-links a,
 .nav-links button {
   border: 0; background: transparent; color: var(--c-fjord-500); font-size: 14px; font-weight: 500;
-  padding: 8px 12px; min-height: 36px; white-space: nowrap;
+  padding: 8px 12px; min-height: 36px; white-space: nowrap; text-decoration: none;
 }
+.nav-links a.is-on,
 .nav-links button.is-on { color: var(--c-bcm); font-weight: 700; }
+.ad-slot { margin: 28px auto; max-width: 1200px; padding: 0 20px; }
+.footer-links { display: flex; flex-wrap: wrap; gap: 12px 20px; }
+.footer-links a { font-weight: 600; }
+.independence { font-weight: 600; color: var(--c-fjord); }
+.home-hero {
+  background: linear-gradient(145deg, var(--c-fjord) 0%, var(--c-fjord-900) 100%);
+  color: #fff; padding: 40px 20px 36px;
+}
+.home-hero .wrap { max-width: 1200px; margin: 0 auto; }
+.home-hero h1 { color: #fff; margin-bottom: 16px; }
+.home-hero p { color: rgb(255 255 255 / 0.92); max-width: 42rem; }
+.home-links { display: grid; gap: 12px; margin: 24px 0 0; padding: 0; list-style: none; }
+.home-links a { color: #fff; font-weight: 700; text-decoration: underline; }
 
 .seg { display: flex; background: var(--c-regn); padding: 3px; gap: 2px; border-radius: 999px; }
 .seg button {

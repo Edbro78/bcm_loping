@@ -1,28 +1,31 @@
-import { scrollToId, usePlan } from '../state/plan';
+import { Link } from 'react-router-dom';
 
 export function Footer() {
-  const { patch } = usePlan();
   return (
     <footer className="site">
       <div className="wrap">
-        <p>
-          Kilder: <a href="https://www.bergencitymarathon.no" target="_blank" rel="noopener">bergencitymarathon.no</a> (løypekart og deltakerinfo) og{' '}
-          <a href="https://www.yr.no" target="_blank" rel="noopener">yr.no/met.no</a>.
+        <p className="independence">
+          Dette er en uavhengig løperguide. Den er ikke tilknyttet TIF Viking, Bergen City Marathon eller løpets sponsorer. For påmelding og offisiell informasjon, bruk{' '}
+          <a href="https://www.bergencitymarathon.no" target="_blank" rel="noopener">
+            bergencitymarathon.no
+          </a>
+          .
         </p>
         <p>
-          Uoffisiell planleggingsguide. Tempomodellen er en forenkling, og høydedata fra GPS støyer. Lytt til kroppen på løpsdagen – planen er et utgangspunkt, ikke en fasit.
+          Kilder til kart og program:{' '}
+          <a href="https://www.bergencitymarathon.no" target="_blank" rel="noopener">
+            bergencitymarathon.no
+          </a>{' '}
+          og{' '}
+          <a href="https://www.yr.no" target="_blank" rel="noopener">
+            yr.no / met.no
+          </a>
+          . Tempomodellen er forenklet; høydedata fra GPS kan avvike. Planen er et utgangspunkt – kroppen på løpsdagen er fasit.
         </p>
-        <p>
-          <button
-            type="button"
-            className="text-btn"
-            onClick={() => {
-              patch({ view: 'personvern' });
-              window.setTimeout(() => scrollToId('personvern'), 40);
-            }}
-          >
-            Personvernerklæring
-          </button>
+        <p className="footer-links">
+          <Link to="/om">Om siden</Link>
+          <Link to="/kontakt">Kontakt</Link>
+          <Link to="/personvern">Personvern</Link>
         </p>
       </div>
     </footer>
