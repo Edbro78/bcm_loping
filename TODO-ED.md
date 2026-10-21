@@ -19,7 +19,7 @@
 
 ## AdSense og annonser
 
-- [ ] Erstatt `pub-XXXXXXXXXXXXXXXX` i `public/ads.txt` med faktisk publisher-ID (og oppdater `VITE_ADSENSE_CLIENT` / `src/lib/site.ts` om nødvendig)
+- [x] `public/ads.txt` synket med `ca-pub-7828159998054709` i kode (oppdater `VITE_ADSENSE_CLIENT` ved bytte konto)
 - [ ] Erstatt `data-ad-slot`-plassholdere (`0000000001` …) i `AdSlot`-komponenter med ekte annonseenhets-IDer
 - [ ] Sett opp Googles sertifiserte CMP under «Privacy & messaging» i AdSense (ingen eget cookie-banner på siden)
 
