@@ -580,6 +580,40 @@ html.preview-mobile { background: #12161c; }
 .spark path.run { stroke: #fff; }
 .spark circle { fill: #fff; }
 .spark .runner { fill: #fff; stroke: var(--c-bcm-700); stroke-width: 2; }
+.spark .runner-fig { transform-box: fill-box; transform-origin: 0 0; }
+.spark .runner-head { fill: #fff; stroke: var(--c-bcm-700); stroke-width: 1.5; }
+.spark .runner-limb {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2.25;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.spark .runner-leg,
+.spark .runner-arm {
+  transform-box: fill-box;
+  transform-origin: 0 0;
+}
+.spark .runner-leg--a { animation: spark-runner-leg 0.32s ease-in-out infinite; }
+.spark .runner-leg--b { animation: spark-runner-leg 0.32s ease-in-out infinite reverse; }
+.spark .runner-arm--a { animation: spark-runner-arm 0.32s ease-in-out infinite reverse; }
+.spark .runner-arm--b { animation: spark-runner-arm 0.32s ease-in-out infinite; }
+@keyframes spark-runner-leg {
+  0%, 100% { transform: rotate(-38deg); }
+  50% { transform: rotate(42deg); }
+}
+@keyframes spark-runner-arm {
+  0%, 100% { transform: rotate(32deg); }
+  50% { transform: rotate(-28deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .spark .runner-leg--a,
+  .spark .runner-leg--b,
+  .spark .runner-arm--a,
+  .spark .runner-arm--b { animation: none; }
+  .spark .runner-leg--a { transform: rotate(-18deg); }
+  .spark .runner-leg--b { transform: rotate(22deg); }
+}
 .spark text { fill: rgb(255 255 255 / 0.75); font-size: 13px; font-weight: 600; }
 .spark .spark-km { fill: #fff; font-size: 12px; font-weight: 650; }
 

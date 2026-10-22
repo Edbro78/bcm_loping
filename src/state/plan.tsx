@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { DistKey, HillKey, SplitKey } from '../config';
 
 export type PlanState = {
@@ -87,14 +87,13 @@ export function PlanProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     localStorage.setItem(KEY, JSON.stringify(state));
   }, [state]);
-  const api = useMemo<Api>(
-    () => ({
-      state,
-      patch: (p) => setState((s) => ({ ...s, ...p })),
-      setLayer: (k, v) => setState((s) => ({ ...s, layers: { ...s.layers, [k]: v } })),
-    }),
-    [state],
-  );
+  const patch = useCallback((p: Partial<PlanState>) => {
+    setState((s) => ({ ...s, ...p }));
+  }, []);
+  const setLayer = useCallback((k: keyof PlanState['layers'], v: boolean) => {
+    setState((s) => ({ ...s, layers: { ...s.layers, [k]: v } }));
+  }, []);
+  const api = useMemo<Api>(() => ({ state, patch, setLayer }), [state, patch, setLayer]);
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>;
 }
 

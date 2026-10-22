@@ -122,7 +122,9 @@ function Spark() {
   const svgRef = useRef<SVGSVGElement>(null);
   const runRef = useRef<SVGPathElement>(null);
   const dotRef = useRef<SVGCircleElement>(null);
+  const runnerFigRef = useRef<SVGGElement>(null);
   const labelRef = useRef<SVGTextElement>(null);
+  const applyRef = useRef<(t: number) => void>(() => {});
   const tRef = useRef(0);
   const scrubbing = useRef(false);
   const holdUntil = useRef(0);
@@ -137,6 +139,7 @@ function Spark() {
   useEffect(() => {
     const run = runRef.current;
     const dot = dotRef.current;
+    const runnerFig = runnerFigRef.current;
     const label = labelRef.current;
     if (!run || !dot || !d) return;
     const len = run.getTotalLength();
@@ -144,19 +147,27 @@ function Spark() {
       const clamped = Math.min(1, Math.max(0, t));
       run.style.strokeDasharray = `${len}`;
       run.style.strokeDashoffset = `${len * (1 - clamped)}`;
-      const p = run.getPointAtLength(Math.max(0, len * clamped - 0.01));
+      const at = Math.max(0, len * clamped - 0.01);
+      const p = run.getPointAtLength(at);
+      const ahead = run.getPointAtLength(Math.min(len, at + 4));
+      const angle = (Math.atan2(ahead.y - p.y, ahead.x - p.x) * 180) / Math.PI;
       dot.setAttribute('cx', p.x.toFixed(1));
       dot.setAttribute('cy', p.y.toFixed(1));
+      runnerFig?.setAttribute(
+        'transform',
+        `translate(${p.x.toFixed(1)},${p.y.toFixed(1)}) rotate(${angle.toFixed(2)})`,
+      );
       if (label) {
         const km = (clamped * LAP).toFixed(1).replace('.', ',');
         label.textContent = `${km} km`;
         const flip = p.x > W * 0.78;
         label.setAttribute('x', (flip ? p.x - 10 : p.x + 10).toFixed(1));
-        label.setAttribute('y', Math.max(12, p.y - 10).toFixed(1));
+        label.setAttribute('y', Math.max(12, p.y - 26).toFixed(1));
         label.setAttribute('text-anchor', flip ? 'end' : 'start');
       }
       svgRef.current?.setAttribute('aria-valuenow', String(Math.round(clamped * LAP * 10) / 10));
     };
+    applyRef.current = apply;
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reduced) {
       apply(1);
@@ -198,20 +209,7 @@ function Spark() {
     const x = ((clientX - rect.left) / rect.width) * W;
     tRef.current = Math.min(1, Math.max(0, (x - pad) / (W - pad * 2)));
     holdUntil.current = 0;
-    const len = run.getTotalLength();
-    run.style.strokeDasharray = `${len}`;
-    run.style.strokeDashoffset = `${len * (1 - tRef.current)}`;
-    const p = run.getPointAtLength(Math.max(0, len * tRef.current - 0.01));
-    dotRef.current?.setAttribute('cx', p.x.toFixed(1));
-    dotRef.current?.setAttribute('cy', p.y.toFixed(1));
-    if (labelRef.current) {
-      const km = (tRef.current * LAP).toFixed(1).replace('.', ',');
-      labelRef.current.textContent = `${km} km`;
-      const flip = p.x > W * 0.78;
-      labelRef.current.setAttribute('x', (flip ? p.x - 10 : p.x + 10).toFixed(1));
-      labelRef.current.setAttribute('y', Math.max(12, p.y - 10).toFixed(1));
-      labelRef.current.setAttribute('text-anchor', flip ? 'end' : 'start');
-    }
+    applyRef.current(tRef.current);
   };
 
   return (
@@ -273,6 +271,22 @@ function Spark() {
         );
       })}
       <circle ref={dotRef} className="runner" r={5.5} cx={X(0)} cy={Y(elevAt(course.points, 0))} />
+      <g ref={runnerFigRef} className="runner-fig" aria-hidden="true" pointerEvents="none">
+        <circle className="runner-head" cx="0" cy="-16" r="3.2" />
+        <path className="runner-limb" d="M0 -12.5 V -5.5" />
+        <g className="runner-arm runner-arm--a" transform="translate(0,-10.5)">
+          <path className="runner-limb" d="M0 0 L 4.5 3.5" />
+        </g>
+        <g className="runner-arm runner-arm--b" transform="translate(0,-10.5)">
+          <path className="runner-limb" d="M0 0 L -3.5 2.5" />
+        </g>
+        <g className="runner-leg runner-leg--a" transform="translate(0,-5.5)">
+          <path className="runner-limb" d="M0 0 L 5 5.5" />
+        </g>
+        <g className="runner-leg runner-leg--b" transform="translate(0,-5.5)">
+          <path className="runner-limb" d="M0 0 L -4.5 5.5" />
+        </g>
+      </g>
       <text ref={labelRef} className="spark-km" x={X(0) + 10} y={12}>
         0,0 km
       </text>

@@ -96,7 +96,7 @@ export function HomePage() {
     };
     scrollTop();
     requestAnimationFrame(() => requestAnimationFrame(scrollTop));
-  }, [patch]);
+  }, []);
 
   return (
     <>
