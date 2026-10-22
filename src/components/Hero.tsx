@@ -5,7 +5,7 @@ import { LAP } from '../config';
 import { elevAt } from '../lib/gpx';
 import { useCourse } from '../state/course';
 import { useUi } from '../i18n/useUi';
-import { usePreviewLocale } from '../state/previewLocale';
+import { useMobileLayout } from '../state/previewLocale';
 import { scrollToView, usePlan, type PlanState } from '../state/plan';
 
 function Countdown({ dist }: { dist: 'half' | 'full' }) {
@@ -50,8 +50,8 @@ export function Hero() {
   const { state, patch } = usePlan();
   const course = useCourse();
   const m = useUi();
-  const { device } = usePreviewLocale();
-  const stepLabels = device === 'mobile' ? m.hero.stepsShort : m.hero.steps;
+  const mobileLayout = useMobileLayout();
+  const stepLabels = mobileLayout ? m.hero.stepsShort : m.hero.steps;
 
   function goToStep(view: PlanState['view']) {
     patch({ view });
@@ -99,7 +99,7 @@ export function Hero() {
                     <span className="step-n">{i + 1}</span>
                   </span>
                   <span className="step-text">{text}</span>
-                  {device !== 'mobile' && (
+                  {!mobileLayout && (
                     <span className="step-action" aria-hidden="true">
                       {m.hero.stepAction}
                     </span>

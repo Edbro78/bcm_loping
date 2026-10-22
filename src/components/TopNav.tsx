@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { OwnerToolbar } from './OwnerToolbar';
+import { OwnerDeviceSeg, OwnerLangSeg } from './OwnerToolbar';
 import { useUi } from '../i18n/useUi';
-import { showOwnerTools } from '../state/previewLocale';
+import { showOwnerTools, useMobileLayout } from '../state/previewLocale';
 
 const ROUTES: { to: string; key: 'home' | 'loypeguide' | 'hoydeprofil' | 'tempoplan' | 'tempostrategi' | 'praktisk' | 'trening' | 'om' }[] = [
   { to: '/', key: 'home' },
@@ -42,6 +42,8 @@ export function TopNav() {
   const drawerRef = useRef<HTMLDetailsElement>(null);
   const { pathname } = useLocation();
   const m = useUi();
+  const mobileLayout = useMobileLayout();
+  const ownerTools = showOwnerTools();
   const activeKey = ROUTES.find((r) => r.to === pathname)?.key ?? 'home';
 
   useEffect(() => {
@@ -72,6 +74,8 @@ export function TopNav() {
           </svg>
           <span>{m.brand}</span>
         </Link>
+        {(mobileLayout || ownerTools) && <OwnerLangSeg />}
+        {ownerTools && <OwnerDeviceSeg />}
         <details className="nav-drawer" ref={drawerRef}>
           <summary className="nav-drawer-trigger">
             <span className="nav-drawer-label">{m.nav.menu}</span>
@@ -84,7 +88,6 @@ export function TopNav() {
         <nav className="nav-links nav-links--bar" aria-label={m.nav.mainMenu}>
           <NavRouteLinks pathname={pathname} labels={m.nav} />
         </nav>
-        {showOwnerTools() && <OwnerToolbar />}
       </div>
     </header>
   );

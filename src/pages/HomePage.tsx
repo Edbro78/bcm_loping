@@ -10,6 +10,7 @@ import { TabBar } from '../components/TabBar';
 import { OppsummeringPage } from '../components/OppsummeringPage';
 import { TempoPlan } from '../components/TempoPlan';
 import { useUi } from '../i18n/useUi';
+import { useEffect } from 'react';
 import { usePlan } from '../state/plan';
 
 function DashboardPanels() {
@@ -82,6 +83,13 @@ function HomeIntro() {
 
 export function HomePage() {
   const { state } = usePlan();
+
+  useEffect(() => {
+    const frame = document.querySelector('.preview-phone-frame');
+    if (frame instanceof HTMLElement) frame.scrollTop = 0;
+    else window.scrollTo(0, 0);
+  }, []);
+
   return (
     <>
       <Hero />

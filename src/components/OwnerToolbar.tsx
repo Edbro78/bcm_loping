@@ -24,7 +24,7 @@ function FlagBritain() {
   );
 }
 
-function OwnerDeviceSeg() {
+export function OwnerDeviceSeg() {
   const { device, setDevice } = usePreviewLocale();
   return (
     <div className="owner-device" role="group" aria-label="Enhet">
@@ -40,7 +40,7 @@ function OwnerDeviceSeg() {
   );
 }
 
-function OwnerLangSeg() {
+export function OwnerLangSeg() {
   const { locale, setLocale } = usePreviewLocale();
   return (
     <div className="owner-lang" role="group" aria-label="Språk">

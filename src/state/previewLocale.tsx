@@ -18,6 +18,7 @@ const PreviewLocaleContext = createContext<PreviewLocaleState | null>(null);
 
 const STORAGE_DEVICE = 'bcm-preview-device';
 const STORAGE_LOCALE = 'bcm-preview-locale';
+export const MOBILE_LAYOUT_MQ = '(max-width: 520px)';
 
 function readDevice(): DevicePreview {
   try {
@@ -80,6 +81,14 @@ export function PreviewLocaleProvider({ children }: { children: ReactNode }) {
     document.documentElement.dataset.locale = locale;
   }, [device, locale]);
 
+  useEffect(() => {
+    const mq = window.matchMedia(MOBILE_LAYOUT_MQ);
+    const sync = () => document.documentElement.classList.toggle('site-mobile', mq.matches);
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  }, []);
+
   const value = useMemo(
     () => ({ device, locale, setDevice, setLocale }),
     [device, locale],
@@ -92,4 +101,20 @@ export function usePreviewLocale(): PreviewLocaleState {
   const ctx = useContext(PreviewLocaleContext);
   if (!ctx) throw new Error('usePreviewLocale outside PreviewLocaleProvider');
   return ctx;
+}
+
+/** Mobil-layout: smalt vindu eller redaktør «Mobil»-preview. */
+export function useMobileLayout(): boolean {
+  const { device } = usePreviewLocale();
+  const [narrow, setNarrow] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia(MOBILE_LAYOUT_MQ).matches,
+  );
+  useEffect(() => {
+    const mq = window.matchMedia(MOBILE_LAYOUT_MQ);
+    const on = () => setNarrow(mq.matches);
+    on();
+    mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
+  }, []);
+  return device === 'mobile' || narrow;
 }

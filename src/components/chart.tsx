@@ -8,7 +8,7 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { useUi } from '../i18n/useUi';
-import { usePreviewLocale } from '../state/previewLocale';
+import { useMobileLayout } from '../state/previewLocale';
 import { BAND_FULL, BAND_HALF, LAP } from '../config';
 import { clockDot, fmtP, fmtT, kmL, sgn } from '../lib/format';
 import { elevAt, type Pt } from '../lib/gpx';
@@ -485,10 +485,10 @@ function PaceLandscapeChart({ plan, points }: { plan: Plan; points: Pt[] }) {
 
 export function PaceChartCard({ plan, points }: { plan: Plan; points: Pt[] }) {
   const { ref, w } = useBoxWidth();
-  const { device } = usePreviewLocale();
+  const mobileLayout = useMobileLayout();
   const m = useUi();
   const [open, setOpen] = useState(false);
-  const expandable = device === 'mobile';
+  const expandable = mobileLayout;
 
   function openFullscreen() {
     if (!expandable) return;

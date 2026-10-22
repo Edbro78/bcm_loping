@@ -51,7 +51,7 @@ export const ui = {
         'Anbefalte milepæler siste 90 dager av treningen',
         'Oppsummering',
       ] as const,
-      stepsShort: ['Distanse', 'Sluttid', 'Plan', 'Milepæler', 'Sum'] as const,
+      stepsShort: ['Distanse', 'Sluttid', 'Plan', 'Milepæler', 'Oppsummering'] as const,
       stepAction: 'Trykk her',
       trykk: 'Trykk for å åpne',
       stepAria: 'Steg {n}: {text}. Trykk for å åpne.',
