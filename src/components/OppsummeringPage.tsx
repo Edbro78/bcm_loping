@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import { CalendarPlus, Copy, Download } from 'lucide-react';
 import { ArmbandCard, ArmbandPrintButton } from './Splits';
-import { HILLS } from '../config';
 import {
   BCM_URL,
   buildFacebookPost,
@@ -12,23 +11,30 @@ import {
   formatTrainingBrief,
 } from '../lib/summary';
 import { clockDot, fmtP, fmtT } from '../lib/format';
+import { hillCopy } from '../i18n/hills';
+import { useUi } from '../i18n/useUi';
 import { useActivePlan } from '../state/active';
 import { usePlan } from '../state/plan';
+import { usePreviewLocale } from '../state/previewLocale';
 
 export function OppsummeringPage() {
   const { state } = usePlan();
   const { plan } = useActivePlan();
+  const { locale } = usePreviewLocale();
+  const m = useUi();
+  const o = m.oppsummering;
+  const sp = m.split;
   const [copyMsg, setCopyMsg] = useState('');
 
-  const milestones = useMemo(() => (plan ? milestoneSummaries(plan) : []), [plan]);
-  const trainingBrief = useMemo(() => (plan ? formatTrainingBrief(plan) : ''), [plan]);
-  const plainText = useMemo(() => (plan ? buildPlanSummaryText(plan, state) : ''), [plan, state]);
-  const facebookText = useMemo(() => (plan ? buildFacebookPost(plan, state) : ''), [plan, state]);
+  const milestones = useMemo(() => (plan ? milestoneSummaries(plan, locale) : []), [plan, locale]);
+  const trainingBrief = useMemo(() => (plan ? formatTrainingBrief(plan, locale) : ''), [plan, locale]);
+  const plainText = useMemo(() => (plan ? buildPlanSummaryText(plan, state, locale) : ''), [plan, state, locale]);
+  const facebookText = useMemo(() => (plan ? buildFacebookPost(plan, state, locale) : ''), [plan, state, locale]);
 
-  if (!plan) return <p className="intro">Laster oppsummering…</p>;
+  if (!plan) return <p className="intro">{o.loading}</p>;
 
-  const distLabel = state.dist === 'full' ? 'Maraton' : 'Halvmaraton';
-  const hill = HILLS[state.hill];
+  const distLabel = state.dist === 'full' ? m.common.full : m.common.half;
+  const hill = hillCopy(locale, state.hill);
 
   async function copyText(text: string, label: string) {
     try {
@@ -36,76 +42,84 @@ export function OppsummeringPage() {
       setCopyMsg(label);
       window.setTimeout(() => setCopyMsg(''), 2400);
     } catch {
-      setCopyMsg('Kunne ikke kopiere – prøv last ned i stedet.');
+      setCopyMsg(m.oppsummering.copyFailed);
     }
   }
 
   return (
     <section className="section oppsummering-section" id="oppsummering" aria-labelledby="oppsummering-tittel">
-      <h2 id="oppsummering-tittel">Oppsummering</h2>
-      <p className="intro">Kort oversikt over planen din – klar til å lagre, kopiere eller dele.</p>
+      <h2 id="oppsummering-tittel">{o.h2}</h2>
+      <p className="intro">{o.intro}</p>
 
       <div className="card oppsummering-lead">
         <dl className="oppsummering-dl">
           <div>
-            <dt>Distanse</dt>
+            <dt>{o.dl.distance}</dt>
             <dd>{distLabel}</dd>
           </div>
           <div>
-            <dt>Ønsket sluttid</dt>
+            <dt>{o.dl.targetTime}</dt>
             <dd>{fmtT(plan.input.T)}</dd>
           </div>
           <div>
-            <dt>Snitt / flatfart</dt>
+            <dt>{o.dl.avgFlat}</dt>
             <dd>
               {fmtP(plan.input.T / plan.D)}/km · p₀ {fmtP(plan.p0)}/km
             </dd>
           </div>
           <div>
-            <dt>I mål (plan)</dt>
-            <dd>kl. {clockDot(plan.input.start, plan.input.T)}</dd>
+            <dt>{o.dl.finishPlan}</dt>
+            <dd>{locale === 'en' ? '' : 'kl. '}{clockDot(plan.input.start, plan.input.T)}</dd>
           </div>
         </dl>
       </div>
 
       <div className="card oppsummering-body">
-        <h3>Strategi</h3>
+        <h3>{o.strategy.h3}</h3>
         <ul className="oppsummering-list">
           <li>
-            <strong>Split:</strong>{' '}
-            {state.split === 'negativ' ? 'Negativ' : state.split === 'positiv' ? 'Positiv' : 'Jevn'}
-            {state.split !== 'jevn' && ` (σ ${state.sigma.toFixed(1).replace('.', ',')} %)`}
+            <strong>{o.strategy.split}</strong>{' '}
+            {state.split === 'negativ' ? sp.negativ : state.split === 'positiv' ? sp.positiv : sp.jevn}
+            {state.split !== 'jevn' &&
+              ` (σ ${state.sigma.toFixed(1).replace('.', locale === 'nb' ? ',' : '.')} %)`}
           </li>
           <li>
-            <strong>Bakker:</strong> {hill.l} – {hill.t}
+            <strong>{o.strategy.hills}</strong> {hill.l} – {hill.t}
           </li>
           <li>
-            <strong>Drikke:</strong>{' '}
-            {state.drink ? `${state.stopOn} s per stopp (${Math.round(plan.S)} s totalt)` : `Av (${Math.round(plan.S)} s modellert)`}
+            <strong>{o.strategy.drink}</strong>{' '}
+            {state.drink
+              ? o.strategy.drinkOn.replace('{stopSec}', String(state.stopOn)).replace('{totalSec}', String(Math.round(plan.S)))
+              : o.strategy.drinkOff.replace('{totalSec}', String(Math.round(plan.S)))}
           </li>
           <li>
-            <strong>Løype:</strong> Jevn innsats i bakkene – planen tåler at du ligger bak snittfart opp mot Fjellveien.
+            <strong>{o.strategy.course}</strong> {o.strategy.courseNote}
           </li>
         </ul>
 
-        <h3>Treningsmilepæler</h3>
+        <h3>{o.milestones.h3}</h3>
         <ul className="oppsummering-milestones">
           {milestones.map((m) => (
             <li key={m.title} className="oppsummering-milestone">
               <div>
                 <strong>{m.title}</strong> · {m.dateLabel}
-                <span className="help"> ({m.daysBefore} dager før løpet)</span>
+                <span className="help">
+                  {' '}
+                  {o.milestones.daysBefore.replace('{days}', String(m.daysBefore))}
+                </span>
                 <p>
-                  {m.distKm} km på {m.targetRange} ({m.paceHint})
+                  {m.distKm} km {locale === 'en' ? 'in' : 'på'} {m.targetRange} ({m.paceHint})
                 </p>
               </div>
               <button
                 type="button"
                 className="btn secondary oppsummering-ics"
-                onClick={() => downloadTextFile(m.icsFilename, buildMilestoneIcs(m, plan), 'text/calendar;charset=utf-8')}
+                onClick={() =>
+                  downloadTextFile(m.icsFilename, buildMilestoneIcs(m, plan, locale), 'text/calendar;charset=utf-8')
+                }
               >
                 <CalendarPlus size={18} aria-hidden="true" />
-                Kalender (.ics)
+                {o.milestones.calendar}
               </button>
             </li>
           ))}
@@ -113,7 +127,7 @@ export function OppsummeringPage() {
 
         {trainingBrief && (
           <>
-            <h3>Trening</h3>
+            <h3>{o.training.h3}</h3>
             <div className="oppsummering-training-row">
               <p className="oppsummering-training">{trainingBrief}</p>
               <ArmbandPrintButton />
@@ -121,8 +135,8 @@ export function OppsummeringPage() {
           </>
         )}
 
-        <h3>Armbåndskort</h3>
-        <p className="help oppsummering-band-help">Mellomtid og klokkeslett ved kjente steder – skriv ut og fest på armen.</p>
+        <h3>{o.armband.h3}</h3>
+        <p className="help oppsummering-band-help">{o.armband.help}</p>
         <div className="oppsummering-band-wrap">
           <ArmbandCard plan={plan} />
         </div>
@@ -130,13 +144,13 @@ export function OppsummeringPage() {
       </div>
 
       <div className="card oppsummering-export">
-        <h3>Hele planen som tekst</h3>
-        <p className="help">Om du vil lagre planen til senere.</p>
-        <textarea className="oppsummering-text" readOnly value={plainText} aria-label="Oppsummering som tekst" rows={18} />
+        <h3>{o.export.h3}</h3>
+        <p className="help">{o.export.help}</p>
+        <textarea className="oppsummering-text" readOnly value={plainText} aria-label={o.export.textareaAria} rows={18} />
         <div className="oppsummering-actions">
-          <button type="button" className="btn primary" onClick={() => copyText(plainText, 'Plan kopiert')}>
+          <button type="button" className="btn primary" onClick={() => copyText(plainText, o.export.planCopied)}>
             <Copy size={18} aria-hidden="true" />
-            Kopier plan
+            {o.export.copyPlan}
           </button>
           <button
             type="button"
@@ -144,19 +158,25 @@ export function OppsummeringPage() {
             onClick={() => downloadTextFile('bcm-2027-min-plan.txt', plainText)}
           >
             <Download size={18} aria-hidden="true" />
-            Last ned .txt
+            {o.export.downloadTxt}
           </button>
         </div>
       </div>
 
       <div className="card oppsummering-export">
-        <h3>Del på Facebook</h3>
-        <p className="help">Kort versjon med overskrift og lenke til arrangøren.</p>
-        <textarea className="oppsummering-text oppsummering-text--short" readOnly value={facebookText} rows={10} aria-label="Tekst for sosiale medier" />
+        <h3>{o.facebook.h3}</h3>
+        <p className="help">{o.facebook.help}</p>
+        <textarea
+          className="oppsummering-text oppsummering-text--short"
+          readOnly
+          value={facebookText}
+          rows={10}
+          aria-label={o.facebook.textareaAria}
+        />
         <div className="oppsummering-actions">
-          <button type="button" className="btn primary" onClick={() => copyText(facebookText, 'Facebook-tekst kopiert')}>
+          <button type="button" className="btn primary" onClick={() => copyText(facebookText, o.facebook.postCopied)}>
             <Copy size={18} aria-hidden="true" />
-            Kopier innlegg
+            {o.facebook.copyPost}
           </button>
           <button
             type="button"
@@ -164,11 +184,11 @@ export function OppsummeringPage() {
             onClick={() => downloadTextFile('bcm-2027-facebook.txt', facebookText)}
           >
             <Download size={18} aria-hidden="true" />
-            Last ned .txt
+            {o.facebook.downloadTxt}
           </button>
         </div>
         <p className="help">
-          Offisiell side:{' '}
+          {m.common.officialSite}{' '}
           <a href={BCM_URL} target="_blank" rel="noopener noreferrer">
             {BCM_URL.replace('https://', '')}
           </a>

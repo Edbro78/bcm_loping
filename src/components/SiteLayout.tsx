@@ -3,23 +3,43 @@ import { TopNav } from './TopNav';
 import { Footer } from './Footer';
 import { PageMeta } from './PageMeta';
 import { AdHead } from './AdHead';
-import { metaForPath } from '../lib/site';
+import { metaForPath } from '../i18n/meta';
+import { usePreviewLocale } from '../state/previewLocale';
+import { useUi } from '../i18n/useUi';
 
-export function SiteLayout() {
-  const { pathname } = useLocation();
-  const meta = metaForPath(pathname);
+function LayoutBody() {
   return (
     <>
-      <PageMeta meta={meta} />
-      {!meta.noAdScript && <AdHead />}
-      <a className="skip" href="#innhold">
-        Hopp til innhold
-      </a>
       <TopNav />
       <main id="innhold">
         <Outlet />
         <Footer />
       </main>
+    </>
+  );
+}
+
+export function SiteLayout() {
+  const { pathname } = useLocation();
+  const { device, locale } = usePreviewLocale();
+  const m = useUi();
+  const meta = metaForPath(pathname, locale);
+  return (
+    <>
+      <PageMeta meta={meta} />
+      {!meta.noAdScript && <AdHead />}
+      <a className="skip" href="#innhold">
+        {m.skipLink}
+      </a>
+      {device === 'mobile' ? (
+        <div className="preview-phone-chrome">
+          <div className="preview-phone-frame" style={{ width: 'min(100%, 404px)' }}>
+            <LayoutBody />
+          </div>
+        </div>
+      ) : (
+        <LayoutBody />
+      )}
     </>
   );
 }

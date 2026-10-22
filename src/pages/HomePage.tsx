@@ -9,6 +9,7 @@ import { Splits, Wristband } from '../components/Splits';
 import { TabBar } from '../components/TabBar';
 import { OppsummeringPage } from '../components/OppsummeringPage';
 import { TempoPlan } from '../components/TempoPlan';
+import { useUi } from '../i18n/useUi';
 import { usePlan } from '../state/plan';
 
 function DashboardPanels() {
@@ -31,54 +32,48 @@ function DashboardPanels() {
 }
 
 function HomeIntro() {
+  const m = useUi();
+  const hi = m.homeIntro;
+  const bl = hi.linkBlurbs;
+  const p4 = hi.paragraphs[3]!;
+  const p4Parts = p4.split('bergencitymarathon.no');
   return (
     <article className="about wrap home-intro">
       <div className="about-in">
-        <h2>Mer om guiden</h2>
+        <h2>{hi.h2s[0]}</h2>
+        <p>{hi.paragraphs[0]}</p>
+        <p>{hi.paragraphs[1]}</p>
+        <p>{hi.paragraphs[2]}</p>
         <p>
-          Denne siden er laget for løpere som skal ta halvmaraton eller maraton i Bergen, og som vil forstå løypa før startskuddet. Verktøyet over følger fire steg: velg distanse, sett måltid, les løpeplanen og sjekk milepæler de siste nitti dagene. Alt lagres lokalt i nettleseren – ingen konto.
-        </p>
-        <p>
-          Bergen City Marathon er en byrunde som starter og slutter ved Bryggen. Maratonløpere tar to runder; halvmaraton én. Det som skiller denne guiden fra et generelt løpsmagasin, er at den er bygget rundt den faktiske traséen: høydeprofil fra GPS-spor, drikkestasjoner plassert der de ligger i praksis, og en tempomodell som lar deg være «bak klokka» der det stiger uten å panikke.
-        </p>
-        <p>
-          Mange kommer til BCM med et måltid fra flat mark. Da er det lett å undervurdere hvor mye Fjellveien og brosteinen i sentrum koster. Guiden viser ikke bare hvor det går opp og ned, men hva det betyr for pacing: jevn innsats i motbakke er ikke det samme som jevn kilometerfart. Kalkulatoren regner om sluttiden din til flatfart, segmenttider og klokkeslett ved kjente steder, slik at du kan skrive et armbåndskort som tåler virkeligheten.
-        </p>
-        <p>
-          Innholdet er skrevet analytisk, ikke kopiert fra arrangørens nettsider. Der jeg mangler egne bilder eller personlige erfaringer fra konkrete partier, står det markert i teksten – det er bevisst, slik at siden vokser med dine notater og foto etter hvert. Fakta som starttider, cut-off og program kan endre seg; sjekk alltid{' '}
+          {p4Parts[0]}
           <a href="https://www.bergencitymarathon.no" target="_blank" rel="noopener">
             bergencitymarathon.no
-          </a>{' '}
-          for påmelding og offisielle oppdateringer.
+          </a>
+          {p4Parts[1] ?? ''}
         </p>
-        <h2>Artikler og dypdykk</h2>
+        <h2>{hi.h2s[1]}</h2>
         <ul className="home-links" style={{ color: 'inherit' }}>
           <li>
-            <Link to="/loypeguide">Løypeguide</Link> – Bryggen, Gamle Bergen, Fjellveien, Store Lungegårdsvann, Nygårdsparken og Nordnes.
+            <Link to="/loypeguide">{m.nav.loypeguide}</Link> – {bl.loypeguide}
           </li>
           <li>
-            <Link to="/hoydeprofil">Høydeprofil og løypekart</Link> – interaktiv graf og kart over løypa.
+            <Link to="/hoydeprofil">{m.nav.hoydeprofil}</Link> – {bl.hoydeprofil}
           </li>
           <li>
-            <Link to="/tempoplan">Tempoplan</Link> – hvordan kalkulatoren på forsiden tenker pacing.
+            <Link to="/tempoplan">{m.nav.tempoplan}</Link> – {bl.tempoplan}
           </li>
           <li>
-            <Link to="/tempostrategi">Tempostrategi</Link> – hvordan fordele krefter på kupert bylløype.
+            <Link to="/tempostrategi">{m.nav.tempostrategi}</Link> – {bl.tempostrategi}
           </li>
           <li>
-            <Link to="/praktisk">Praktisk</Link> – garderobe, transport, overnatting og utstyr.
+            <Link to="/praktisk">{m.nav.praktisk}</Link> – {bl.praktisk}
           </li>
           <li>
-            <Link to="/trening">Trening</Link> – siste tolv uker og bakkearbeid mot Fjellveien.
+            <Link to="/trening">{m.nav.trening}</Link> – {bl.trening}
           </li>
         </ul>
-        <p className="pull">
-          Nesten all merkbart stigning på runden ligger mellom sjøen ved Sandviken og toppen av Fjellveien. Resten av guiden kan leses som en kommentar til den setningen.
-        </p>
-        <p>
-          {/* TODO-ED: egen erfaring fra første BCM eller generalprøve på halve runden */}
-          Har du løpt runden før, er din egen historie verdt mer enn noen tabell. Legg den inn der markøren står, så blir siden din like mye som den er generisk.
-        </p>
+        <p className="pull">{hi.pull}</p>
+        <p>{hi.closing}</p>
         <AdSlot slot="0000000001" />
       </div>
     </article>

@@ -1,17 +1,17 @@
 import { AdSlot } from '../components/AdSlot';
 import { ElevationProfile } from '../components/ElevationProfile';
 import { LazyCourseMap } from '../components/LazyCourseMap';
+import { useUi } from '../i18n/useUi';
 
 export function HoydeprofilPage() {
+  const h = useUi().hoydeprofil;
   return (
     <>
       <article className="about wrap">
         <div className="about-in">
-          <p className="kicker ink">Løype</p>
-          <h1>Høydeprofil og kart</h1>
-          <p className="lead">
-            Grafen viser stigning langs BCM-løypa fra Bryggen. Nesten all høydemeter ligger mellom km 3 og 8 mot Fjellveien. Hold markøren over profilen for å se punktet i kartet under.
-          </p>
+          <p className="kicker ink">{h.kicker}</p>
+          <h1>{h.h1}</h1>
+          <p className="lead">{h.intro}</p>
         </div>
       </article>
 
@@ -22,9 +22,7 @@ export function HoydeprofilPage() {
 
       <article className="about wrap about-after-panels">
         <div className="about-in">
-          <p className="help">
-            Høyder fra GPX når filen er lastet; ellers brukes en reserveprofil. Maraton er to runder på samme halvmaratontrasé. Har du satt måltid på forsiden, vises planlagt tid og fart i profilen.
-          </p>
+          <p className="help">{h.help}</p>
           <AdSlot slot="0000000002" />
         </div>
       </article>

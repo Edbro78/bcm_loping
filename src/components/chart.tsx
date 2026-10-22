@@ -1,4 +1,14 @@
-import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+  type ReactNode,
+  type KeyboardEvent as ReactKeyboardEvent,
+} from 'react';
+import { createPortal } from 'react-dom';
+import { useUi } from '../i18n/useUi';
+import { usePreviewLocale } from '../state/previewLocale';
 import { BAND_FULL, BAND_HALF, LAP } from '../config';
 import { clockDot, fmtP, fmtT, kmL, sgn } from '../lib/format';
 import { elevAt, type Pt } from '../lib/gpx';
@@ -249,10 +259,20 @@ const PPR = 50;
 const PPT = 34;
 const PPB = 26;
 
-export function PaceSvg({ plan, points, width }: { plan: Plan; points: Pt[]; width: number }) {
+export function PaceSvg({
+  plan,
+  points,
+  width,
+  height = PH,
+}: {
+  plan: Plan;
+  points: Pt[];
+  width: number;
+  height?: number;
+}) {
   const { km, setKm } = useHover();
   const W = width;
-  const H = PH;
+  const H = height;
   const D = plan.D;
   const X = (k: number) => PPL + (k / D) * (W - PPL - PPR);
   const Ye = (e: number) => PPT + (1 - e / 150) * (H - PPT - PPB);
@@ -352,5 +372,168 @@ export function PaceSvg({ plan, points, width }: { plan: Plan; points: Pt[]; wid
       })}
       <ChartHover plan={plan} points={points} W={W} H={H} PL={PPL} PR={PPR} />
     </svg>
+  );
+}
+
+function usePortalMount(open: boolean) {
+  const [mount, setMount] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    if (!open) return;
+    setMount((document.querySelector('.preview-phone-frame') ?? document.body) as HTMLElement);
+  }, [open]);
+  return mount;
+}
+
+function ChartLandscapeOverlay({
+  open,
+  onClose,
+  title,
+  children,
+}: {
+  open: boolean;
+  onClose: () => void;
+  title: string;
+  children: ReactNode;
+}) {
+  const m = useUi();
+  const mount = usePortalMount(open);
+  const overlayRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const frame = document.querySelector('.preview-phone-frame') as HTMLElement | null;
+    const prevFrameOverflow = frame?.style.overflow ?? '';
+    const prevBodyOverflow = document.body.style.overflow;
+    if (frame) frame.style.overflow = 'hidden';
+    else document.body.style.overflow = 'hidden';
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', onKey);
+
+    const node = overlayRef.current;
+    const enterFs = async () => {
+      if (!node?.requestFullscreen) return;
+      try {
+        await node.requestFullscreen();
+        const ori = screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> };
+        await ori.lock?.('landscape').catch(() => undefined);
+      } catch {
+        /* preview / permissions */
+      }
+    };
+    void enterFs();
+
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      if (frame) frame.style.overflow = prevFrameOverflow;
+      else document.body.style.overflow = prevBodyOverflow;
+      if (document.fullscreenElement === node) {
+        void document.exitFullscreen().catch(() => undefined);
+      }
+      const ori = screen.orientation as ScreenOrientation & { unlock?: () => void };
+      ori.unlock?.();
+    };
+  }, [open, onClose]);
+
+  if (!open || !mount) return null;
+
+  return createPortal(
+    <div ref={overlayRef} className="chart-landscape-overlay" role="dialog" aria-modal="true" aria-label={title}>
+      <header className="chart-landscape-head">
+        <p className="chart-landscape-title">{title}</p>
+        <button type="button" className="chart-landscape-close" onClick={onClose}>
+          {m.splits.closeFullscreen}
+        </button>
+      </header>
+      <div className="chart-landscape-body">{children}</div>
+    </div>,
+    mount,
+  );
+}
+
+function PaceLandscapeChart({ plan, points }: { plan: Plan; points: Pt[] }) {
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(720);
+  const [height, setHeight] = useState(360);
+
+  useEffect(() => {
+    const el = bodyRef.current;
+    if (!el) return;
+    const apply = () => {
+      const pad = 12;
+      const cw = el.clientWidth;
+      const ch = el.clientHeight;
+      setWidth(Math.max(360, Math.round(ch - pad)));
+      setHeight(Math.max(280, Math.round(cw - pad)));
+    };
+    apply();
+    const ro = new ResizeObserver(apply);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  return (
+    <div ref={bodyRef} className="chart-landscape-rotator">
+      <div className="chart-landscape-rotator-in">
+        <PaceSvg plan={plan} points={points} width={width} height={height} />
+      </div>
+    </div>
+  );
+}
+
+export function PaceChartCard({ plan, points }: { plan: Plan; points: Pt[] }) {
+  const { ref, w } = useBoxWidth();
+  const { device } = usePreviewLocale();
+  const m = useUi();
+  const [open, setOpen] = useState(false);
+  const expandable = device === 'mobile';
+
+  function openFullscreen() {
+    if (!expandable) return;
+    setOpen(true);
+  }
+
+  async function closeFullscreen() {
+    if (document.fullscreenElement) {
+      await document.exitFullscreen().catch(() => undefined);
+    }
+    setOpen(false);
+  }
+
+  function onCardKeyDown(e: ReactKeyboardEvent<HTMLDivElement>) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      openFullscreen();
+    }
+  }
+
+  return (
+    <>
+      <div
+        ref={ref}
+        className={`card chart-pace-card${expandable ? ' chart-pace-card--expandable' : ''}`}
+        {...(expandable
+          ? {
+              role: 'button',
+              tabIndex: 0,
+              'aria-label': m.splits.chartExpand,
+              onClick: openFullscreen,
+              onKeyDown: onCardKeyDown,
+            }
+          : {})}
+      >
+        {expandable && (
+          <span className="chart-pace-hint" aria-hidden="true">
+            {m.splits.chartExpandHint}
+          </span>
+        )}
+        <PaceSvg plan={plan} points={points} width={w} />
+      </div>
+      <ChartLandscapeOverlay open={open} onClose={() => void closeFullscreen()} title={m.splits.chartFullscreenTitle}>
+        <PaceLandscapeChart plan={plan} points={points} />
+      </ChartLandscapeOverlay>
+    </>
   );
 }

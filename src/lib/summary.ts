@@ -1,4 +1,7 @@
-import { HILLS, type HillKey, type SplitKey } from '../config';
+import { type HillKey, type SplitKey } from '../config';
+import { hillCopy } from '../i18n/hills';
+import { ui } from '../i18n/ui';
+import type { Locale } from '../state/previewLocale';
 import type { Plan } from './model';
 import { clockDot, dateDM, fmtP, fmtT } from './format';
 import { addDays, lookupMilestones, rngT, WEEK1 } from './milestones';
@@ -13,6 +16,10 @@ function guideUrl(): string {
 
 const TAPER_FROM_WEEK = 12;
 
+function fill(template: string, vars: Record<string, string | number>): string {
+  return template.replace(/\{(\w+)\}/g, (_, k) => String(vars[k] ?? ''));
+}
+
 export function trainingVolumeBrief(plan: Plan) {
   const hit = lookupMilestones(plan.input.full, plan.input.T);
   return {
@@ -22,21 +29,29 @@ export function trainingVolumeBrief(plan: Plan) {
   };
 }
 
-export function formatTrainingBrief(plan: Plan): string {
+export function formatTrainingBrief(plan: Plan, locale: Locale): string {
   const { volRange, taperFromWeek, taperFromDate } = trainingVolumeBrief(plan);
-  return `Sikt mot ${volRange[0]}–${volRange[1]} km per uke de siste tre månedene. Nedtrapping fra uke ${taperFromWeek} (mandagsuken som starter ${taperFromDate}).`;
+  const s = ui[locale].summaryExport;
+  return fill(s.trainingBrief, {
+    volLo: volRange[0],
+    volHi: volRange[1],
+    week: taperFromWeek,
+    date: taperFromDate,
+  });
 }
 
 const MILESTONE_TESTS = [
-  { week: 4, title: 'Milepæl 1', key: 'k3' as const, dist: 3, kmLabel: '3 km' },
-  { week: 8, title: 'Milepæl 2', key: 'k5' as const, dist: 5, kmLabel: '5 km' },
-  { week: 10, title: 'Milepæl 3', key: 'k10' as const, dist: 10, kmLabel: '10 km' },
+  { week: 4, key: 'k3' as const, dist: 3, kmLabel: '3 km' },
+  { week: 8, key: 'k5' as const, dist: 5, kmLabel: '5 km' },
+  { week: 10, key: 'k10' as const, dist: 10, kmLabel: '10 km' },
 ];
 
-function splitLabel(split: SplitKey, sigma: number): string {
-  if (split === 'jevn') return 'Jevn split (lik innsats første og andre halvdel).';
-  const name = split === 'negativ' ? 'Negativ split' : 'Positiv split';
-  return `${name} (σ ${sigma.toFixed(1).replace('.', ',')} %).`;
+function splitLabel(locale: Locale, split: SplitKey, sigma: number): string {
+  const s = ui[locale].summaryExport;
+  const sp = ui[locale].split;
+  if (split === 'jevn') return s.splitJevn;
+  const name = split === 'negativ' ? sp.negativ : sp.positiv;
+  return fill(s.splitNamed, { name, sigma: sigma.toFixed(1).replace('.', locale === 'nb' ? ',' : '.') });
 }
 
 function milestoneDay(week: number): Date {
@@ -54,106 +69,113 @@ export type MilestoneSummary = {
   icsFilename: string;
 };
 
-export function milestoneSummaries(plan: Plan): MilestoneSummary[] {
+export function milestoneSummaries(plan: Plan, locale: Locale): MilestoneSummary[] {
   const hit = lookupMilestones(plan.input.full, plan.input.T);
-  return MILESTONE_TESTS.map((t) => {
+  const titles = ui[locale].summaryExport.milestoneTitles;
+  const paceTpl = ui[locale].summaryExport.paceHint;
+  return MILESTONE_TESTS.map((t, i) => {
     const rng = hit[t.key];
     const date = milestoneDay(t.week);
     const daysBefore = Math.round((RACE.getTime() - date.getTime()) / 86400000);
     return {
-      title: t.title,
+      title: titles[i] ?? `M${i + 1}`,
       date,
       dateLabel: dateDM(date),
       daysBefore,
       distKm: t.dist,
       targetRange: rngT(rng[0], rng[1]),
-      paceHint: `${fmtP(rng[1] / t.dist)}/km eller raskere`,
+      paceHint: fill(paceTpl, { pace: fmtP(rng[1] / t.dist) }),
       icsFilename: `bcm-2027-${t.kmLabel.replace(' ', '')}-test.ics`,
     };
   });
 }
 
-export function buildPlanSummaryText(plan: Plan, state: PlanState): string {
+export function buildPlanSummaryText(plan: Plan, state: PlanState, locale: Locale): string {
   const full = plan.input.full;
-  const dist = full ? 'Maraton' : 'Halvmaraton';
-  const distKm = full ? '42,2 km' : '21,1 km';
+  const c = ui[locale].common;
+  const s = ui[locale].summaryExport;
+  const dist = full ? c.full : c.half;
+  const distKm = full ? s.distKmFull : s.distKmHalf;
   const goal = fmtT(plan.input.T);
   const start = plan.input.start;
   const raceStart = full ? '07.45' : '09.00';
   const hit = lookupMilestones(full, plan.input.T);
-  const milestones = milestoneSummaries(plan);
+  const milestones = milestoneSummaries(plan, locale);
+  const hill = hillCopy(locale, state.hill as HillKey);
 
   const lines: string[] = [
-    'BCM 2027 – min løpeplan',
+    s.header,
     '========================',
     '',
-    `Distanse: ${dist} (${distKm})`,
-    `Ønsket sluttid: ${goal}`,
-    `Start Bryggen: ${raceStart} (lørdag 24. april 2027)`,
-    `Planlagt i mål: ca. kl. ${clockDot(start, plan.input.T)}`,
+    `${ui[locale].oppsummering.dl.distance}: ${dist} (${distKm})`,
+    `${ui[locale].oppsummering.dl.targetTime}: ${goal}`,
+    fill(s.startLine, { time: raceStart }),
+    `${ui[locale].oppsummering.dl.finishPlan}: ca. kl. ${clockDot(start, plan.input.T)}`,
     '',
-    'Tempo og strategi',
+    s.tempoSection,
     '-----------------',
-    `Snittfart (flat): ${fmtP(plan.input.T / plan.D)}/km`,
-    `Flatfart p₀: ${fmtP(plan.p0)}/km`,
-    splitLabel(state.split, state.sigma),
-    `Bakkestrategi: ${HILLS[state.hill as HillKey].l} – ${HILLS[state.hill as HillKey].t}`,
+    `${ui[locale].oppsummering.dl.avgFlat}: ${fmtP(plan.input.T / plan.D)}/km`,
+    `Flat p₀: ${fmtP(plan.p0)}/km`,
+    splitLabel(locale, state.split, state.sigma),
+    `${ui[locale].oppsummering.strategy.hills} ${hill.l} – ${hill.t}`,
     state.drink
-      ? `Drikkestopp: ${state.stopOn} s per stasjon (${Math.round(plan.S)} s totalt).`
-      : `Drikkestopp: av (modellen legger ${Math.round(plan.S)} s totalt).`,
+      ? fill(s.drinkOn, { sec: state.stopOn, total: Math.round(plan.S) })
+      : fill(s.drinkOff, { total: Math.round(plan.S) }),
     '',
-    'Løpeplan i korte trekk',
+    s.planSection,
     '----------------------',
-    'Planen følger jevn innsats i bakkene – du skal ligge bak jevn snittfart opp mot Fjellveien, ikke jage klokka der.',
-    `Halvveis: ${fmtT(plan.tAt(plan.D / 2))} · I mål: ${goal}.`,
+    s.planNote,
+    `${s.halfway}: ${fmtT(plan.tAt(plan.D / 2))} · ${s.finish}: ${goal}.`,
     '',
-    'Anbefalte testmilepæler (siste 90 dager)',
+    s.milestonesSection,
     '----------------------------------------',
-    `VDOT ≈ ${hit.vdot.toFixed(1).replace('.', ',')}`,
+    `VDOT ≈ ${hit.vdot.toFixed(1).replace('.', locale === 'nb' ? ',' : '.')}`,
   ];
 
+  const daysLabel = locale === 'en' ? 'days before race' : 'dager før løpet';
   for (const m of milestones) {
     lines.push(
       '',
-      `${m.title} – ${m.dateLabel} (${m.daysBefore} dager før løpet)`,
-      `${m.distKm} km på ${m.targetRange} (${m.paceHint})`,
+      `${m.title} – ${m.dateLabel} (${m.daysBefore} ${daysLabel})`,
+      `${m.distKm} km ${locale === 'en' ? 'in' : 'på'} ${m.targetRange} (${m.paceHint})`,
     );
   }
 
-  lines.push('', 'Trening', '-------', formatTrainingBrief(plan));
+  lines.push('', s.trainingSection, '-------', formatTrainingBrief(plan, locale));
 
-  lines.push(
-    '',
-    'Offisiell info og påmelding:',
-    BCM_URL,
-    '',
-    'Generert med BCM løpeguide.',
-  );
+  lines.push('', s.official, BCM_URL, '', s.generated);
   const gu = guideUrl();
   if (gu) lines.push(gu);
 
   return lines.join('\n');
 }
 
-export function buildFacebookPost(plan: Plan, state: PlanState): string {
-  const dist = plan.input.full ? 'maraton' : 'halvmaraton';
+export function buildFacebookPost(plan: Plan, state: PlanState, locale: Locale): string {
+  const c = ui[locale].common;
+  const s = ui[locale].summaryExport;
+  const sp = ui[locale].split;
+  const dist = plan.input.full ? c.full.toLowerCase() : c.half.toLowerCase();
   const goal = fmtT(plan.input.T);
-  const milestones = milestoneSummaries(plan);
-  const mLines = milestones.map((m) => `• ${m.dateLabel}: ${m.distKm} km-test (${m.targetRange})`).join('\n');
+  const milestones = milestoneSummaries(plan, locale);
+  const mLines = milestones.map((m) => `• ${m.dateLabel}: ${m.distKm} km (${m.targetRange})`).join('\n');
   const { volRange, taperFromWeek, taperFromDate } = trainingVolumeBrief(plan);
+  const hill = hillCopy(locale, state.hill as HillKey);
+
+  const splitText =
+    state.split === 'jevn' ? `${sp.jevn} split` : `${sp[state.split as keyof typeof sp]} split`;
 
   return [
-    'Min plan for BCM i 2027!',
+    s.fbTitle,
     '',
-    `${dist.charAt(0).toUpperCase() + dist.slice(1)} på ${goal}.`,
-    `${HILLS[state.hill as HillKey].l} i bakkene, ${state.split === 'jevn' ? 'jevn split' : state.split + ' split'}.`,
-    `Flatfart ca. ${fmtP(plan.p0)}/km.`,
-    `Trening ca. ${volRange[0]}–${volRange[1]} km/uke · nedtrapping fra uke ${taperFromWeek} (${taperFromDate}).`,
+    `${dist.charAt(0).toUpperCase() + dist.slice(1)} ${locale === 'en' ? 'in' : 'på'} ${goal}.`,
+    `${hill.l} ${locale === 'en' ? 'on hills' : 'i bakkene'}, ${splitText}.`,
+    `${locale === 'en' ? 'Flat pace' : 'Flatfart'} ca. ${fmtP(plan.p0)}/km.`,
+    `${locale === 'en' ? 'Training' : 'Trening'} ca. ${volRange[0]}–${volRange[1]} km/${locale === 'en' ? 'wk' : 'uke'} · ${locale === 'en' ? 'taper from week' : 'nedtrapping fra uke'} ${taperFromWeek} (${taperFromDate}).`,
     '',
-    'Testmilepæler:',
+    s.fbTests,
     mLines,
     '',
-    `Offisiell side: ${BCM_URL}`,
+    `${ui[locale].common.officialSite} ${BCM_URL}`,
   ].join('\n');
 }
 
@@ -174,14 +196,14 @@ function localToUtcIcs(d: Date, hour: number, minute: number): string {
   return `${y}${String(mo).padStart(2, '0')}${String(ud).padStart(2, '0')}T${String(uh).padStart(2, '0')}${String(minute).padStart(2, '0')}00Z`;
 }
 
-export function buildMilestoneIcs(m: MilestoneSummary, plan: Plan): string {
+export function buildMilestoneIcs(m: MilestoneSummary, plan: Plan, locale: Locale): string {
   const start = localToUtcIcs(m.date, 9, 0);
   const end = localToUtcIcs(m.date, 10, 0);
-  const dist = plan.input.full ? 'maraton' : 'halvmaraton';
+  const dist = plan.input.full ? ui[locale].common.full.toLowerCase() : ui[locale].common.half.toLowerCase();
   const desc = [
     `BCM 2027 – ${m.title}`,
-    `Mål: ${fmtT(plan.input.T)} (${dist})`,
-    `Test: ${m.distKm} km på ${m.targetRange} (${m.paceHint})`,
+    `${locale === 'en' ? 'Goal' : 'Mål'}: ${fmtT(plan.input.T)} (${dist})`,
+    `${locale === 'en' ? 'Test' : 'Test'}: ${m.distKm} km ${locale === 'en' ? 'in' : 'på'} ${m.targetRange} (${m.paceHint})`,
     BCM_URL,
   ].join('\\n');
 

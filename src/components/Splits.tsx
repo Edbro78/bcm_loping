@@ -17,10 +17,11 @@ import {
 import { clockDot, clockS, fmtP, fmtT, kmL, nb, sgn, sgnS } from '../lib/format';
 import { buildPlan, gradeOf, type Plan } from '../lib/model';
 import { elevAt, type Pt } from '../lib/gpx';
-import { PaceSvg, useBoxWidth } from './chart';
+import { PaceChartCard } from './chart';
 import { useActivePlan } from '../state/active';
 import { useCourse } from '../state/course';
 import { StepContinue } from './StepContinue';
+import { useUi } from '../i18n/useUi';
 import { scrollToView, usePlan } from '../state/plan';
 
 type Mark = { km: number; name: string };
@@ -67,7 +68,6 @@ export function Splits() {
   const { state, patch } = usePlan();
   const { plan } = useActivePlan();
   const course = useCourse();
-  const { ref, w } = useBoxWidth();
   if (!plan) return <p className="intro">Laster mellomtider…</p>;
 
   function goToMilepaeler() {
@@ -83,9 +83,7 @@ export function Splits() {
         <span><i className="swatch gap" /> GAP</span>
         <span><i className="swatch elev" /> Høyde</span>
       </div>
-      <div className="card" ref={ref}>
-        <PaceSvg plan={plan} points={course.points} width={w} />
-      </div>
+      <PaceChartCard plan={plan} points={course.points} />
       <div className="subtabs" role="tablist" aria-label="Mellomtider">
         {(
           [
@@ -269,11 +267,12 @@ type ArmbandPrintButtonProps = {
 };
 
 export function ArmbandPrintButton({ className = '', variant = 'band' }: ArmbandPrintButtonProps) {
+  const label = useUi().armband.print;
   const styleClass = variant === 'primary' ? 'btn primary' : 'btn oppsummering-band-print';
   return (
     <button type="button" className={`no-print ${styleClass} ${className}`.trim()} onClick={() => window.print()}>
       <Printer size={17} strokeWidth={2} aria-hidden="true" />
-      Skriv ut armbånd
+      {label}
     </button>
   );
 }

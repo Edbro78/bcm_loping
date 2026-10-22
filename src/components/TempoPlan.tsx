@@ -5,6 +5,7 @@ import type { HillKey, SplitKey } from '../config';
 import { clockDot, fmtP, fmtT, parseT, quickLabel, sgnS } from '../lib/format';
 import { useActivePlan } from '../state/active';
 import { StepContinue } from './StepContinue';
+import { useUi } from '../i18n/useUi';
 import { scrollToView, usePlan } from '../state/plan';
 
 const TIME_RANGE = {
@@ -60,7 +61,8 @@ export function TempoPlan() {
     if (!focus) setDraft(fmtT(T));
   }, [T, focus, state.dist]);
 
-  if (!plan) return <p className="intro">Laster tempoplan…</p>;
+  const m = useUi();
+  if (!plan) return <p className="intro">{m.tempoPlan.loading}</p>;
 
   const quick = QUICK[state.dist];
   const t5 = plan.tAt(5);
@@ -84,7 +86,7 @@ export function TempoPlan() {
 
   return (
     <section className="section tempo-section" aria-labelledby="tempo-tittel">
-      <h2 id="tempo-tittel">Ønsket sluttid</h2>
+      <h2 id="tempo-tittel">{m.tempoPlan.h2}</h2>
       <p className="intro tempo-intro">
         Jevn innsats i bakkene – alt oppdateres mens du endrer, og lagres på enheten.
       </p>

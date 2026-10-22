@@ -1,4 +1,5 @@
 import { Routes, Route } from 'react-router-dom';
+import { PreviewLocaleProvider } from './state/previewLocale';
 import { PlanProvider } from './state/plan';
 import { CourseProvider } from './state/course';
 import { HoverProvider } from './state/active';
@@ -17,6 +18,7 @@ import { PersonvernPage } from './pages/PersonvernPage';
 
 export function App() {
   return (
+    <PreviewLocaleProvider>
     <PlanProvider>
       <CourseProvider>
         <HoverProvider>
@@ -38,5 +40,6 @@ export function App() {
         </HoverProvider>
       </CourseProvider>
     </PlanProvider>
+    </PreviewLocaleProvider>
   );
 }

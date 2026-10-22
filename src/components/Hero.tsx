@@ -4,9 +4,12 @@ import { RACE_START } from '../config';
 import { LAP } from '../config';
 import { elevAt } from '../lib/gpx';
 import { useCourse } from '../state/course';
+import { useUi } from '../i18n/useUi';
+import { usePreviewLocale } from '../state/previewLocale';
 import { scrollToView, usePlan, type PlanState } from '../state/plan';
 
 function Countdown({ dist }: { dist: 'half' | 'full' }) {
+  const m = useUi();
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const id = window.setInterval(() => setNow(Date.now()), 10);
@@ -14,17 +17,19 @@ function Countdown({ dist }: { dist: 'half' | 'full' }) {
   }, []);
   const target = new Date(RACE_START[dist]).getTime();
   const diff = Math.max(0, target - now);
+  const u = m.hero.countdown.units;
   const parts: [string, number][] = [
-    ['Dager', Math.floor(diff / 86400000)],
-    ['Timer', Math.floor((diff % 86400000) / 3600000)],
-    ['Minutter', Math.floor((diff % 3600000) / 60000)],
-    ['Sekunder', Math.floor((diff % 60000) / 1000)],
-    ['Hundredeler', Math.floor((diff % 1000) / 10)],
+    [u.days, Math.floor(diff / 86400000)],
+    [u.hours, Math.floor((diff % 86400000) / 3600000)],
+    [u.minutes, Math.floor((diff % 3600000) / 60000)],
+    [u.seconds, Math.floor((diff % 60000) / 1000)],
+    [u.hundredths, Math.floor((diff % 1000) / 10)],
   ];
-  const startLabel = dist === 'full' ? '07.45' : '09.00';
   return (
     <>
-      <p className="count-label">{diff === 0 ? 'Løpet har startet' : `Nedtelling til start kl. ${startLabel}`}</p>
+      <p className="count-label">
+        {diff === 0 ? m.hero.countdown.started : dist === 'full' ? m.hero.countdown.untilFull : m.hero.countdown.untilHalf}
+      </p>
       <div className="count-boxes">
         {parts.map(([l, n]) => (
           <div key={l} className="count-box">
@@ -37,26 +42,16 @@ function Countdown({ dist }: { dist: 'half' | 'full' }) {
   );
 }
 
-const STEPS: { icon: LucideIcon; text: string; view: PlanState['view'] }[] = [
-  { icon: Flag, text: 'Velge distanse (hel eller halv)', view: 'distanse' },
-  { icon: Timer, text: 'Ønsket sluttid', view: 'plan' },
-  { icon: Route, text: 'Anbefalt løpeplan', view: 'splits' },
-  { icon: CalendarRange, text: 'Anbefalte milepæler siste 90 dager av treningen', view: 'mile' },
-  { icon: ClipboardList, text: 'Oppsummering', view: 'oppsummering' },
-];
-
-const PLACES: [number, string][] = [
-  [0, 'Bryggen'],
-  [3.2, 'Gamle Bergen'],
-  [6.2, 'Fjellveien'],
-  [14, 'Lungegårdsvann'],
-  [LAP - 2, 'Nordnes'],
-  [LAP, 'Bryggen'],
-];
+const STEP_ICONS: LucideIcon[] = [Flag, Timer, Route, CalendarRange, ClipboardList];
+const STEP_VIEWS: PlanState['view'][] = ['distanse', 'plan', 'splits', 'mile', 'oppsummering'];
+const PLACE_KM = [0, 3.2, 6.2, 14, LAP - 2, LAP] as const;
 
 export function Hero() {
   const { state, patch } = usePlan();
   const course = useCourse();
+  const m = useUi();
+  const { device } = usePreviewLocale();
+  const stepLabels = device === 'mobile' ? m.hero.stepsShort : m.hero.steps;
 
   function goToStep(view: PlanState['view']) {
     patch({ view });
@@ -67,17 +62,17 @@ export function Hero() {
     <section className="hero">
       <div className="hero-grid">
         <div>
-          <p className="kicker">Bergen City Marathon 2027 · uavhengig guide</p>
-          <h1>BCM løpeguide, tempoplanlegger og milepæler</h1>
+          <p className="kicker">{m.hero.kicker}</p>
+          <h1>{m.hero.h1}</h1>
         </div>
         <div className="hero-side">
           <Countdown dist={state.dist} />
           {course.status === 'loading' ? (
-            <p className="badge wait">Laster løype…</p>
+            <p className="badge wait">{m.hero.course.loading}</p>
           ) : course.status === 'ok' ? (
-            <p className="badge ok">GPX lastet inn · eksakt trasé</p>
+            <p className="badge ok">{m.hero.course.ok}</p>
           ) : (
-            <p className="badge warn">Høydedata estimert</p>
+            <p className="badge warn">{m.hero.course.warn}</p>
           )}
           {course.error && (
             <p className="hero-error" role="alert">
@@ -85,26 +80,34 @@ export function Hero() {
             </p>
           )}
         </div>
-        <ol className="steps" aria-label="Slik bruker du verktøyet">
-          {STEPS.map((step, i) => (
-            <li key={step.text}>
-              <button
-                type="button"
-                className="step-card"
-                onClick={() => goToStep(step.view)}
-                aria-label={`Steg ${i + 1}: ${step.text}. Trykk for å åpne.`}
-              >
-                <span className="step-ico">
-                  <step.icon size={22} strokeWidth={1.75} aria-hidden="true" />
-                  <span className="step-n">{i + 1}</span>
-                </span>
-                <span className="step-text">{step.text}</span>
-                <span className="step-action" aria-hidden="true">
-                  Trykk her
-                </span>
-              </button>
-            </li>
-          ))}
+        <ol className="steps" aria-label={m.hero.stepsAria}>
+          {stepLabels.map((text, i) => {
+            const Icon = STEP_ICONS[i]!;
+            const view = STEP_VIEWS[i]!;
+            return (
+              <li key={text}>
+                <button
+                  type="button"
+                  className="step-card"
+                  onClick={() => goToStep(view)}
+                  aria-label={m.hero.stepAria
+                    .replace('{n}', String(i + 1))
+                    .replace('{text}', m.hero.steps[i] ?? text)}
+                >
+                  <span className="step-ico">
+                    <Icon size={22} strokeWidth={1.75} aria-hidden="true" />
+                    <span className="step-n">{i + 1}</span>
+                  </span>
+                  <span className="step-text">{text}</span>
+                  {device !== 'mobile' && (
+                    <span className="step-action" aria-hidden="true">
+                      {m.hero.stepAction}
+                    </span>
+                  )}
+                </button>
+              </li>
+            );
+          })}
         </ol>
       </div>
       {course.points.length > 10 && <Spark />}
@@ -114,6 +117,8 @@ export function Hero() {
 
 function Spark() {
   const course = useCourse();
+  const m = useUi();
+  const places = m.hero.places;
   const svgRef = useRef<SVGSVGElement>(null);
   const runRef = useRef<SVGPathElement>(null);
   const dotRef = useRef<SVGCircleElement>(null);
@@ -215,7 +220,7 @@ function Spark() {
       className="spark"
       viewBox={`0 0 ${W} ${H}`}
       role="slider"
-      aria-label="Høydeprofil fra Bryggen til mål"
+      aria-label={m.hero.sparkAria}
       aria-valuemin={0}
       aria-valuemax={21.1}
       aria-valuenow={0}
@@ -253,8 +258,9 @@ function Spark() {
     >
       <path className="track" d={d} />
       <path ref={runRef} className="run" d={d} />
-      {PLACES.map(([k, name], i) => {
-        const last = i === PLACES.length - 1;
+      {PLACE_KM.map((k, i) => {
+        const name = places[i] ?? '';
+        const last = i === PLACE_KM.length - 1;
         const anchor = i === 0 ? 'start' : last ? 'end' : 'middle';
         const x = i === 0 ? 8 : last ? W - 8 : X(k);
         return (

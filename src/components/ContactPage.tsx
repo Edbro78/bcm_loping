@@ -1,10 +1,20 @@
 import { useState, type FormEvent } from 'react';
+import { ui } from '../i18n/ui';
+import { useUi } from '../i18n/useUi';
+import type { Locale } from '../state/previewLocale';
+import { usePreviewLocale } from '../state/previewLocale';
 
 const TO = 'edvard.brother@outlook.com';
 
-export function contactMailto(name: string, email: string, question: string): string {
-  const subject = 'Spørsmål til BCM-løpeguiden';
-  const body = [`Navn: ${name.trim() || '(ikke oppgitt)'}`, `E-post: ${email.trim()}`, '', question.trim()].join('\n');
+export function contactMailto(locale: Locale, name: string, email: string, question: string): string {
+  const t = ui[locale].contact;
+  const subject = t.mailtoSubject;
+  const body = [
+    t.mailtoNameLine.replace('{name}', name.trim() || t.nameNotGiven),
+    t.mailtoEmailLine.replace('{email}', email.trim()),
+    '',
+    question.trim(),
+  ].join('\n');
   return `mailto:${TO}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
@@ -13,6 +23,8 @@ function validEmail(value: string): boolean {
 }
 
 export function ContactPage() {
+  const { locale } = usePreviewLocale();
+  const t = useUi().contact;
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [question, setQuestion] = useState('');
@@ -27,26 +39,24 @@ export function ContactPage() {
     setTried(true);
     setOpened(false);
     if (!validEmail(email) || question.trim().length < 5) return;
-    window.location.href = contactMailto(name, email, question);
+    window.location.href = contactMailto(locale, name, email, question);
     setOpened(true);
   }
 
   return (
     <article className="contact wrap" id="kontakt">
       <div className="contact-in">
-        <p className="kicker ink">BCM 2027</p>
-        <h1>Kontakt</h1>
-        <p className="intro">
-          Send et spørsmål om løypa, tempoplanen eller siden. Meldingen åpnes i e-postprogrammet ditt, ferdig adressert, og sendes derfra.
-        </p>
+        <p className="kicker ink">{t.kicker}</p>
+        <h1>{t.h1}</h1>
+        <p className="intro">{t.intro}</p>
         <form className="card contact-form" onSubmit={submit} noValidate>
           <label className="lbl" htmlFor="kontakt-navn">
-            Navn
+            {t.name}
           </label>
           <input id="kontakt-navn" name="navn" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} />
 
           <label className="lbl" htmlFor="kontakt-epost">
-            E-post
+            {t.email}
           </label>
           <input
             id="kontakt-epost"
@@ -59,10 +69,10 @@ export function ContactPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
-          {emailBad && <p className="field-error">Skriv en e-postadresse vi kan svare til.</p>}
+          {emailBad && <p className="field-error">{t.emailError}</p>}
 
           <label className="lbl" htmlFor="kontakt-spm">
-            Spørsmål
+            {t.question}
           </label>
           <textarea
             id="kontakt-spm"
@@ -73,14 +83,14 @@ export function ContactPage() {
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
           />
-          {questionBad && <p className="field-error">Skriv spørsmålet, minst et par ord.</p>}
+          {questionBad && <p className="field-error">{t.questionError}</p>}
 
           <button type="submit" className="btn primary">
-            Send spørsmål
+            {t.submit}
           </button>
           {opened && (
             <p className="help contact-sent" role="status">
-              E-posten er klar i e-postprogrammet ditt. Trykk send der, så går den til {TO}.
+              {t.sent.replace('{email}', TO)}
             </p>
           )}
         </form>

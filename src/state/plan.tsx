@@ -118,29 +118,61 @@ const VIEW_SCROLL_ALIGN: Partial<Record<PlanState['view'], ScrollLogicalPosition
   distanse: 'end',
 };
 
-function scrollOffsetPx() {
-  const nav = document.querySelector('.nav');
-  const navH = nav?.getBoundingClientRect().height ?? 72;
-  return navH + 24;
+function phoneScrollRoot(el: Element): HTMLElement | null {
+  const frame = el.closest('.preview-phone-frame');
+  return frame instanceof HTMLElement ? frame : null;
+}
+
+function navHeightPx(scope: ParentNode): number {
+  const nav = scope.querySelector('.nav');
+  return nav?.getBoundingClientRect().height ?? 72;
 }
 
 export function scrollToId(id: string, block: ScrollLogicalPosition = 'start') {
   const el = document.getElementById(id);
   if (!el) return;
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (block === 'start') {
-    const top = el.getBoundingClientRect().top + window.scrollY - scrollOffsetPx();
-    window.scrollTo({ top: Math.max(0, top), behavior: reduce ? 'auto' : 'smooth' });
+  const behavior: ScrollBehavior = reduce ? 'auto' : 'smooth';
+  const root = phoneScrollRoot(el);
+  const offset = navHeightPx(root ?? document) + 8;
+
+  if (root) {
+    const rootRect = root.getBoundingClientRect();
+    const elRect = el.getBoundingClientRect();
+    if (block === 'start') {
+      const top = root.scrollTop + (elRect.top - rootRect.top) - offset;
+      root.scrollTo({ top: Math.max(0, top), behavior });
+      return;
+    }
+    if (block === 'end') {
+      const top = root.scrollTop + (elRect.bottom - rootRect.top) - root.clientHeight + 16;
+      root.scrollTo({ top: Math.max(0, top), behavior });
+      return;
+    }
+    const top = root.scrollTop + (elRect.top - rootRect.top) - offset;
+    root.scrollTo({ top: Math.max(0, top), behavior });
     return;
   }
-  el.scrollIntoView({ block, behavior: reduce ? 'auto' : 'smooth' });
+
+  if (block === 'start') {
+    const top = el.getBoundingClientRect().top + window.scrollY - offset;
+    window.scrollTo({ top: Math.max(0, top), behavior });
+    return;
+  }
+  el.scrollIntoView({ block, behavior });
 }
 
 /** Scroll etter at React har tegnet nytt panel (dobbelt rAF). */
 export function scrollToView(view: PlanState['view']) {
   const id = VIEW_SCROLL_ID[view];
   const block = VIEW_SCROLL_ALIGN[view] ?? 'start';
+  const run = () => scrollToId(id, block);
   requestAnimationFrame(() => {
-    requestAnimationFrame(() => scrollToId(id, block));
+    requestAnimationFrame(() => {
+      run();
+      if (document.querySelector('.preview-phone-frame')) {
+        window.setTimeout(run, 60);
+      }
+    });
   });
 }
