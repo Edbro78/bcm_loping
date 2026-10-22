@@ -1,7 +1,14 @@
-import { usePlan } from '../state/plan';
+import { StepContinue } from './StepContinue';
+import { scrollToView, usePlan } from '../state/plan';
 
 export function DistanceChoice() {
   const { state, patch } = usePlan();
+
+  function goToSluttid() {
+    patch({ view: 'plan' });
+    scrollToView('plan');
+  }
+
   return (
     <section className="section" aria-labelledby="distanse-tittel">
       <h2 id="distanse-tittel">Velge distanse</h2>
@@ -16,6 +23,7 @@ export function DistanceChoice() {
           </button>
         </div>
       </div>
+      <StepContinue id="distanse-step-continue" step={2} label="Ønsket sluttid" onClick={goToSluttid} />
     </section>
   );
 }

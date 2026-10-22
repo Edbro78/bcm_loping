@@ -7,6 +7,7 @@ const origin = 'https://bergencitymarathon.com';
 const paths = [
   '/',
   '/loypeguide',
+  '/hoydeprofil',
   '/tempoplan',
   '/tempostrategi',
   '/praktisk',

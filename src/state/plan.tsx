@@ -13,7 +13,7 @@ export type PlanState = {
   startHalf: string;
   startFull: string;
   tab: 'seg' | 'km';
-  view: 'distanse' | 'plan' | 'profil' | 'splits' | 'mile' | 'band';
+  view: 'distanse' | 'plan' | 'profil' | 'splits' | 'mile' | 'band' | 'oppsummering';
   layers: { drink: boolean; toilet: boolean; relay: boolean; terrain: boolean };
   view3d: boolean;
 };
@@ -51,7 +51,8 @@ function load(): PlanState {
       p.view === 'profil' ||
       p.view === 'splits' ||
       p.view === 'mile' ||
-      p.view === 'band'
+      p.view === 'band' ||
+      p.view === 'oppsummering'
         ? p.view
         : 'plan';
     const view = p.tab === 'band' && savedView === 'splits' ? 'band' : savedView;
@@ -103,10 +104,43 @@ export function usePlan(): Api {
   return ctx;
 }
 
-export function scrollToId(id: string) {
+export const VIEW_SCROLL_ID: Record<PlanState['view'], string> = {
+  distanse: 'distanse-step-continue',
+  plan: 'tempo-tittel',
+  profil: 'profil-tittel',
+  splits: 'mellom-tittel',
+  mile: 'mile-tittel',
+  band: 'band-tittel',
+  oppsummering: 'oppsummering-tittel',
+};
+
+const VIEW_SCROLL_ALIGN: Partial<Record<PlanState['view'], ScrollLogicalPosition>> = {
+  distanse: 'end',
+};
+
+function scrollOffsetPx() {
+  const nav = document.querySelector('.nav');
+  const navH = nav?.getBoundingClientRect().height ?? 72;
+  return navH + 24;
+}
+
+export function scrollToId(id: string, block: ScrollLogicalPosition = 'start') {
   const el = document.getElementById(id);
   if (!el) return;
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const top = el.getBoundingClientRect().top + window.scrollY - 72;
-  window.scrollTo({ top: Math.max(0, top), behavior: reduce ? 'auto' : 'smooth' });
+  if (block === 'start') {
+    const top = el.getBoundingClientRect().top + window.scrollY - scrollOffsetPx();
+    window.scrollTo({ top: Math.max(0, top), behavior: reduce ? 'auto' : 'smooth' });
+    return;
+  }
+  el.scrollIntoView({ block, behavior: reduce ? 'auto' : 'smooth' });
+}
+
+/** Scroll etter at React har tegnet nytt panel (dobbelt rAF). */
+export function scrollToView(view: PlanState['view']) {
+  const id = VIEW_SCROLL_ID[view];
+  const block = VIEW_SCROLL_ALIGN[view] ?? 'start';
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => scrollToId(id, block));
+  });
 }

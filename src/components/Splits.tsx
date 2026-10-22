@@ -20,7 +20,8 @@ import { elevAt, type Pt } from '../lib/gpx';
 import { PaceSvg, useBoxWidth } from './chart';
 import { useActivePlan } from '../state/active';
 import { useCourse } from '../state/course';
-import { usePlan } from '../state/plan';
+import { StepContinue } from './StepContinue';
+import { scrollToView, usePlan } from '../state/plan';
 
 type Mark = { km: number; name: string };
 
@@ -68,6 +69,12 @@ export function Splits() {
   const course = useCourse();
   const { ref, w } = useBoxWidth();
   if (!plan) return <p className="intro">Laster mellomtider…</p>;
+
+  function goToMilepaeler() {
+    patch({ view: 'mile' });
+    scrollToView('mile');
+  }
+
   return (
     <section className="section" aria-labelledby="mellom-tittel">
       <h2 id="mellom-tittel">Anbefalt løpeplan</h2>
@@ -94,6 +101,12 @@ export function Splits() {
       {state.tab === 'seg' && <Segments plan={plan} />}
       {state.tab === 'km' && <PerKm plan={plan} />}
       <Reference plan={plan} points={course.points} />
+      <StepContinue
+        id="splits-step-continue"
+        step={4}
+        label="Anbefalte milepæler siste 90 dager"
+        onClick={goToMilepaeler}
+      />
     </section>
   );
 }
@@ -250,6 +263,65 @@ function PerKm({ plan }: { plan: Plan }) {
   );
 }
 
+type ArmbandPrintButtonProps = {
+  className?: string;
+  variant?: 'primary' | 'band';
+};
+
+export function ArmbandPrintButton({ className = '', variant = 'band' }: ArmbandPrintButtonProps) {
+  const styleClass = variant === 'primary' ? 'btn primary' : 'btn oppsummering-band-print';
+  return (
+    <button type="button" className={`no-print ${styleClass} ${className}`.trim()} onClick={() => window.print()}>
+      <Printer size={17} strokeWidth={2} aria-hidden="true" />
+      Skriv ut armbånd
+    </button>
+  );
+}
+
+export function ArmbandCard({ plan }: { plan: Plan }) {
+  const rows = plan.input.full ? BAND_FULL : BAND_HALF;
+  const hill = HILLS[plan.input.hill].l;
+  const split = plan.input.split === 'jevn' ? 'jevn' : plan.input.split;
+  return (
+    <article id="armband" className="oppsummering-armband">
+      <header>
+        <p>BCM 2027 · {plan.input.full ? 'Maraton' : 'Halvmaraton'}</p>
+        <b>{fmtT(plan.input.T)}</b>
+      </header>
+      <ul>
+        {rows.map(([km, name]) => {
+          const hi = /Halvveis|Mål/.test(name);
+          return (
+            <li key={name + km} className={hi ? 'hi' : ''}>
+              <span>
+                <strong>{kmL(km)}</strong>
+                <em>{name}</em>
+              </span>
+              <b>{fmtT(plan.tAt(km))}</b>
+              <small>{clockDot(plan.input.start, plan.tAt(km))}</small>
+            </li>
+          );
+        })}
+      </ul>
+      <footer>
+        <span>
+          Flat {fmtP(plan.p0)}/km · {hill}, {split}
+        </span>
+        <span>Start {plan.input.start.replace(':', '.')}</span>
+      </footer>
+    </article>
+  );
+}
+
+function Band({ plan }: { plan: Plan }) {
+  return (
+    <div className="band-wrap">
+      <ArmbandCard plan={plan} />
+      <ArmbandPrintButton variant="primary" />
+    </div>
+  );
+}
+
 export function Wristband() {
   const { plan } = useActivePlan();
   if (!plan) return <p className="intro">Laster armbåndskort…</p>;
@@ -259,44 +331,6 @@ export function Wristband() {
       <p className="intro">Mellomtidene på et kort du kan skrive ut og ha på armen.</p>
       <Band plan={plan} />
     </section>
-  );
-}
-
-function Band({ plan }: { plan: Plan }) {
-  const rows = plan.input.full ? BAND_FULL : BAND_HALF;
-  const hill = HILLS[plan.input.hill].l;
-  const split = plan.input.split === 'jevn' ? 'jevn' : plan.input.split;
-  return (
-    <div className="band-wrap">
-      <article id="armband">
-        <header>
-          <p>BCM 2027 · {plan.input.full ? 'Maraton' : 'Halvmaraton'}</p>
-          <b>{fmtT(plan.input.T)}</b>
-        </header>
-        <ul>
-          {rows.map(([km, name]) => {
-            const hi = /Halvveis|Mål/.test(name);
-            return (
-              <li key={name + km} className={hi ? 'hi' : ''}>
-                <span>
-                  <strong>{kmL(km)}</strong>
-                  <em>{name}</em>
-                </span>
-                <b>{fmtT(plan.tAt(km))}</b>
-                <small>{clockDot(plan.input.start, plan.tAt(km))}</small>
-              </li>
-            );
-          })}
-        </ul>
-        <footer>
-          <span>Flat {fmtP(plan.p0)}/km · {hill}, {split}</span>
-          <span>Start {plan.input.start.replace(':', '.')}</span>
-        </footer>
-      </article>
-      <button type="button" className="btn primary no-print" onClick={() => window.print()}>
-        <Printer size={16} /> Skriv ut kortet
-      </button>
-    </div>
   );
 }
 

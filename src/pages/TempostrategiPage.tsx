@@ -18,8 +18,6 @@ export function TempostrategiPage() {
           «Fort i bakker» som strategi betyr bevisst høyere innsats opp. Det kan fungere hvis du er sterk i motbakke og har testet det i trening. For de fleste halvmaraton- og maratondebutanter i Bergen er middels eller sakte bakkestrategi tryggere: du banker ikke pulsen i Nyhavnsveien, og du har råd til å løpe ned uten å riste lårene i fillebiter.
         </p>
 
-        <AdSlot slot="0000000006" />
-
         <h2>Nedoverbakke: kontrollert fall</h2>
         <p>
           Nedover ser ut som gratis tid, men muskulært er det eksentrisk belastning. Springer du for fort ned Bellevuebakken, kan du føle deg flytende – til Munkebekksmauet later som det er fjell. Strategien er å løpe nedover som du løper flat: jevn innsats, kortere steg der det er bratt, ingen «superman»-sprint.
@@ -36,8 +34,6 @@ export function TempostrategiPage() {
           Spørsmålet er ikke «kan jeg løpe 4:15/km opp?», men «vil jeg fortsatt kunne løpe 4:15/km etter at jeg har gjort det ti ganger?»
         </p>
 
-        <AdSlot slot="0000000007" />
-
         <h2>Maraton vs halvmaraton</h2>
         <p>
           Halvmaraton er en intensiv runde der feil i første tredelel er vanskelig å reparere, men du slipper å gjenta feilen. Maraton er to runder med samme terrengprofil. Den klassiske feilen er å løpe runde én som halvmaraton med litt ekstra i bakhånd. Cut-off ved Bryggen gjør at maraton ikke er «to halvmaratoner» – det er halvmaraton pluss en halvmaraton med allerede slitte bein.
@@ -53,6 +49,9 @@ export function TempostrategiPage() {
         <p>
           Før start: skriv flatfart og to klokkeslett (5 km og Fjellveien) på armen. Under løp: nedjustér forventning i motbakke, hold igjen i nedover, ikke jage snittfart før du er forbi Lungegårdsvann. Etter Fjellveien andre runde: vurder gange i bratt brostein som del av planen, ikke som nederlag.
         </p>
+
+        <AdSlot slot="0000000006" />
+        <AdSlot slot="0000000007" />
       </div>
     </article>
   );

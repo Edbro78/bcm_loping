@@ -4,6 +4,7 @@ import { Link, useLocation } from 'react-router-dom';
 const LINKS: { to: string; label: string }[] = [
   { to: '/', label: 'Forside' },
   { to: '/loypeguide', label: 'Løypeguide' },
+  { to: '/hoydeprofil', label: 'Høydeprofil og løypekart' },
   { to: '/tempoplan', label: 'Tempoplan' },
   { to: '/tempostrategi', label: 'Tempostrategi' },
   { to: '/praktisk', label: 'Praktisk' },

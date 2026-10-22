@@ -16,7 +16,8 @@ import { LAP, POIS, PROGRAM, STAGES, STATIONS, TERR } from '../config';
 import { clockDot, dateDM, fmtP, fmtT, kmL, nb } from '../lib/format';
 import { addDays, daysBetween, lookupMilestones, rngT, slowerThan, weekKms, WEEK1 } from '../lib/milestones';
 import { useActivePlan } from '../state/active';
-import { usePlan } from '../state/plan';
+import { StepContinue } from './StepContinue';
+import { scrollToView, usePlan } from '../state/plan';
 
 const RACE = new Date(Date.UTC(2027, 3, 24));
 const FORECAST_FROM = new Date('2027-04-15T00:00:00+02:00');
@@ -37,7 +38,13 @@ export function MilePage() {
 
 export function MileFormkrav() {
   const { plan } = useActivePlan();
+  const { patch } = usePlan();
   if (!plan) return null;
+
+  function goToOppsummering() {
+    patch({ view: 'oppsummering' });
+    scrollToView('oppsummering');
+  }
   const hit = lookupMilestones(plan.input.full, plan.input.T);
   const distName = plan.input.full ? 'maraton' : 'halvmaraton';
   const how = hit.outside
@@ -145,6 +152,8 @@ export function MileFormkrav() {
           );
         })}
       </div>
+
+      <StepContinue id="mile-step-continue" step={5} label="Oppsummering" onClick={goToOppsummering} />
 
       <div className="section-head">
         <h3>Kravsmatrise, {distName}</h3>

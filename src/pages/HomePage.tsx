@@ -7,6 +7,7 @@ import { LazyCourseMap } from '../components/LazyCourseMap';
 import { MilePage } from '../components/MilePage';
 import { Splits, Wristband } from '../components/Splits';
 import { TabBar } from '../components/TabBar';
+import { OppsummeringPage } from '../components/OppsummeringPage';
 import { TempoPlan } from '../components/TempoPlan';
 import { usePlan } from '../state/plan';
 
@@ -14,7 +15,7 @@ function DashboardPanels() {
   const { state } = usePlan();
   return (
     <>
-      <TabBar />
+      {state.view !== 'oppsummering' && <TabBar />}
       <div className="wrap panels">
         {state.view === 'distanse' && <DistanceChoice />}
         {state.view === 'plan' && <TempoPlan />}
@@ -22,6 +23,7 @@ function DashboardPanels() {
         {state.view === 'splits' && <Splits />}
         {state.view === 'mile' && <MilePage />}
         {state.view === 'band' && <Wristband />}
+        {state.view === 'oppsummering' && <OppsummeringPage />}
       </div>
       {state.view === 'profil' && <LazyCourseMap />}
     </>
@@ -42,7 +44,6 @@ function HomeIntro() {
         <p>
           Mange kommer til BCM med et måltid fra flat mark. Da er det lett å undervurdere hvor mye Fjellveien og brosteinen i sentrum koster. Guiden viser ikke bare hvor det går opp og ned, men hva det betyr for pacing: jevn innsats i motbakke er ikke det samme som jevn kilometerfart. Kalkulatoren regner om sluttiden din til flatfart, segmenttider og klokkeslett ved kjente steder, slik at du kan skrive et armbåndskort som tåler virkeligheten.
         </p>
-        <AdSlot slot="0000000001" />
         <p>
           Innholdet er skrevet analytisk, ikke kopiert fra arrangørens nettsider. Der jeg mangler egne bilder eller personlige erfaringer fra konkrete partier, står det markert i teksten – det er bevisst, slik at siden vokser med dine notater og foto etter hvert. Fakta som starttider, cut-off og program kan endre seg; sjekk alltid{' '}
           <a href="https://www.bergencitymarathon.no" target="_blank" rel="noopener">
@@ -53,10 +54,13 @@ function HomeIntro() {
         <h2>Artikler og dypdykk</h2>
         <ul className="home-links" style={{ color: 'inherit' }}>
           <li>
-            <Link to="/loypeguide">Løypeguide</Link> – Bryggen, Gamle Bergen, Fjellveien, Store Lungegårdsvann, Nygårdsparken og Nordnes, med kart og høydeprofil.
+            <Link to="/loypeguide">Løypeguide</Link> – Bryggen, Gamle Bergen, Fjellveien, Store Lungegårdsvann, Nygårdsparken og Nordnes.
           </li>
           <li>
-            <Link to="/tempoplan">Tempoplan</Link> – samme kalkulator med mer forklaringstekst rundt verktøyet.
+            <Link to="/hoydeprofil">Høydeprofil og løypekart</Link> – interaktiv graf og kart over løypa.
+          </li>
+          <li>
+            <Link to="/tempoplan">Tempoplan</Link> – hvordan kalkulatoren på forsiden tenker pacing.
           </li>
           <li>
             <Link to="/tempostrategi">Tempostrategi</Link> – hvordan fordele krefter på kupert bylløype.
@@ -75,17 +79,19 @@ function HomeIntro() {
           {/* TODO-ED: egen erfaring fra første BCM eller generalprøve på halve runden */}
           Har du løpt runden før, er din egen historie verdt mer enn noen tabell. Legg den inn der markøren står, så blir siden din like mye som den er generisk.
         </p>
+        <AdSlot slot="0000000001" />
       </div>
     </article>
   );
 }
 
 export function HomePage() {
+  const { state } = usePlan();
   return (
     <>
       <Hero />
       <DashboardPanels />
-      <HomeIntro />
+      {state.view !== 'oppsummering' && <HomeIntro />}
     </>
   );
 }

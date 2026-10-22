@@ -1,7 +1,4 @@
 import { AdSlot } from '../components/AdSlot';
-import { ElevationProfile } from '../components/ElevationProfile';
-import { LazyCourseMap } from '../components/LazyCourseMap';
-import { MileStages } from '../components/MilePage';
 
 export function LoypeguidePage() {
   return (
@@ -29,8 +26,6 @@ export function LoypeguidePage() {
           Gamle Bergen passeres som et tydelig landemerke. For turister er det museum; for deg er det signal om at den egentlige jobben starter snart. Drikkestasjon ved Sandviken sykehus ligger i dette partiet. {/* TODO-ED: egen erfaring fra Gamle Bergen-passering – publikum, smal gate */}
         </p>
 
-        <AdSlot slot="0000000002" />
-
         <h2>Nyhavnsveien og opp mot Fjellveien</h2>
         <p>
           Svingen inn fra sjøen og oppover er der mange opplever at «BCM begynner». Stigningen er jevn nok til at det er fristende å holde kilometerfart, men det er nettopp det tempoplanen advarer mot. Her skal du holde innsats, ikke tempo. Lårene og pusten skal jobbe, men uten å tømme tanken for det som kommer høyere oppe.
@@ -55,8 +50,6 @@ export function LoypeguidePage() {
           Gjennom Nygårdsparken og videre mot havna er underlaget blandet. Det er fortsatt «billige» meter hvis du har hatt disiplin tidligere. Tenk på det som sparekonto, ikke kasino.
         </p>
 
-        <AdSlot slot="0000000003" />
-
         <h2>Munkebekksmauet, Nordnes og hjem</h2>
         <p>
           Brostein i Munkebekksmauet er kort i meter, lang i opplevelse. Stegene blir korte, ankler arbeider, og frustrasjonen kan koke. Her lønner det seg å akseptere at farten faller uten at det betyr kollaps i planen. Nordnes og siste strekking mot Bryggen er psykologisk: du hører mål uten å være ferdig. Strandgaten hjem er flat nok til at de som har spart, kan presse kontrollert.
@@ -64,16 +57,10 @@ export function LoypeguidePage() {
         <p>
           Maraton andre runde gjentar alt dette med erfaring i beina. Samme bakker, samme brostein, samme vind – bare mer støy i hodet. Strategien bør være skrevet ned før du starter, ikke funnet opp ved Bryggen andre gang.
         </p>
-      </div>
 
-      <div className="wrap">
-        <MileStages />
+        <AdSlot slot="0000000002" />
+        <AdSlot slot="0000000003" />
       </div>
-
-      <div className="wrap panels">
-        <ElevationProfile />
-      </div>
-      <LazyCourseMap />
     </article>
   );
 }

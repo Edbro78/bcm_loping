@@ -4,7 +4,8 @@ import { HILLS, MAX_TIME, QUICK } from '../config';
 import type { HillKey, SplitKey } from '../config';
 import { clockDot, fmtP, fmtT, parseT, quickLabel, sgnS } from '../lib/format';
 import { useActivePlan } from '../state/active';
-import { usePlan } from '../state/plan';
+import { StepContinue } from './StepContinue';
+import { scrollToView, usePlan } from '../state/plan';
 
 const TIME_RANGE = {
   half: { min: 60 * 60, max: MAX_TIME.half },
@@ -76,118 +77,139 @@ export function TempoPlan() {
     patch(state.dist === 'full' ? { targetFull: sec } : { targetHalf: sec });
   }
 
+  function goToLopeplan() {
+    patch({ view: 'splits' });
+    scrollToView('splits');
+  }
+
   return (
-    <section className="section" aria-labelledby="tempo-tittel">
+    <section className="section tempo-section" aria-labelledby="tempo-tittel">
       <h2 id="tempo-tittel">Ønsket sluttid</h2>
-      <p className="intro">
-        Planen fordeler tiden etter jevn innsats i bakkene, ikke jevn fart. Alt beregnes på nytt mens du endrer, og lagres på denne enheten.
+      <p className="intro tempo-intro">
+        Jevn innsats i bakkene – alt oppdateres mens du endrer, og lagres på enheten.
       </p>
-      <div className="split-2">
-        <div className="card">
-          <label className="lbl" htmlFor="maal">
-            Mål-sluttid
-          </label>
-          <div className="target-row">
-            <input
-              id="maal"
-              className={`target ${bad ? 'bad' : ''}`}
-              inputMode="numeric"
-              aria-invalid={bad}
-              value={focus ? draft : fmtT(T)}
-              onFocus={() => {
-                setFocus(true);
-                setDraft(fmtT(T));
-              }}
-              onBlur={() => {
-                setFocus(false);
-                const p = parseT(draft);
-                if (p == null || p <= 0) setBad(true);
-                else setTarget(p);
-              }}
-              onChange={(e) => {
-                setDraft(e.target.value);
-                const p = parseT(e.target.value);
-                setBad(p == null);
-                if (p != null && p > 0) patch(state.dist === 'full' ? { targetFull: p } : { targetHalf: p });
-              }}
-            />
-            <span className="hint">{fmtP(T / plan.D)}/km i snitt</span>
+      <div className="split-2 tempo-split-2">
+        <div className="card tempo-form-card">
+          <div className="tempo-form-top">
+            <label className="lbl" htmlFor="maal">
+              Mål-sluttid
+            </label>
+            <div className="target-row">
+              <input
+                id="maal"
+                className={`target ${bad ? 'bad' : ''}`}
+                inputMode="numeric"
+                aria-invalid={bad}
+                value={focus ? draft : fmtT(T)}
+                onFocus={() => {
+                  setFocus(true);
+                  setDraft(fmtT(T));
+                }}
+                onBlur={() => {
+                  setFocus(false);
+                  const p = parseT(draft);
+                  if (p == null || p <= 0) setBad(true);
+                  else setTarget(p);
+                }}
+                onChange={(e) => {
+                  setDraft(e.target.value);
+                  const p = parseT(e.target.value);
+                  setBad(p == null);
+                  if (p != null && p > 0) patch(state.dist === 'full' ? { targetFull: p } : { targetHalf: p });
+                }}
+              />
+              <span className="hint">{fmtP(T / plan.D)}/km i snitt</span>
+            </div>
+            <div className="pills" role="group" aria-label="Hurtigvalg">
+              {quick.map((s) => (
+                <button key={s} type="button" className={`pill ${T === s ? 'on' : ''}`} onClick={() => setTarget(s)}>
+                  {quickLabel(s)}
+                </button>
+              ))}
+            </div>
+            <TimeSlider dist={state.dist} seconds={T} onChange={setTarget} />
           </div>
-          <div className="pills" role="group" aria-label="Hurtigvalg">
-            {quick.map((s) => (
-              <button key={s} type="button" className={`pill ${T === s ? 'on' : ''}`} onClick={() => setTarget(s)}>
-                {quickLabel(s)}
-              </button>
-            ))}
-          </div>
-          <TimeSlider dist={state.dist} seconds={T} onChange={setTarget} />
 
-          <p className="lbl">Split-strategi</p>
-          <div className="seg" role="group" aria-label="Split-strategi">
-            {(['negativ', 'jevn', 'positiv'] as SplitKey[]).map((k) => (
-              <button key={k} type="button" aria-pressed={state.split === k} onClick={() => patch({ split: k })}>
-                {k === 'negativ' ? 'Negativ' : k === 'jevn' ? 'Jevn' : 'Positiv'}
-              </button>
-            ))}
+          <div className="tempo-form-mid">
+            <div className="tempo-form-cell">
+              <p className="lbl">Split-strategi</p>
+              <div className="seg" role="group" aria-label="Split-strategi">
+                {(['negativ', 'jevn', 'positiv'] as SplitKey[]).map((k) => (
+                  <button key={k} type="button" aria-pressed={state.split === k} onClick={() => patch({ split: k })}>
+                    {k === 'negativ' ? 'Negativ' : k === 'jevn' ? 'Jevn' : 'Positiv'}
+                  </button>
+                ))}
+              </div>
+              <label className={`slider ${state.split === 'jevn' ? 'off' : ''}`}>
+                <span>Split σ {state.sigma.toFixed(1).replace('.', ',')} %</span>
+                <input
+                  type="range"
+                  min={0}
+                  max={5}
+                  step={0.5}
+                  value={state.sigma}
+                  disabled={state.split === 'jevn'}
+                  onChange={(e) => patch({ sigma: Number(e.target.value) })}
+                />
+              </label>
+            </div>
+            <div className="tempo-form-cell">
+              <p className="lbl">Bakkestrategi</p>
+              <div className="seg" role="group" aria-label="Bakkestrategi" title={HILLS[state.hill].t}>
+                {(['fort', 'middels', 'sakte'] as HillKey[]).map((k) => (
+                  <button
+                    key={k}
+                    type="button"
+                    aria-pressed={state.hill === k}
+                    title={HILLS[k].t}
+                    onClick={() => patch({ hill: k })}
+                  >
+                    {HILLS[k].l}
+                  </button>
+                ))}
+              </div>
+              <p className="help tempo-hill-hint">{HILLS[state.hill].t}</p>
+            </div>
           </div>
-          <label className={`slider ${state.split === 'jevn' ? 'off' : ''}`}>
-            <span>Split σ {state.sigma.toFixed(1).replace('.', ',')} %</span>
-            <input
-              type="range"
-              min={0}
-              max={5}
-              step={0.5}
-              value={state.sigma}
-              disabled={state.split === 'jevn'}
-              onChange={(e) => patch({ sigma: Number(e.target.value) })}
-            />
-          </label>
 
-          <p className="lbl">Bakkestrategi</p>
-          <div className="seg" role="group" aria-label="Bakkestrategi">
-            {(['fort', 'middels', 'sakte'] as HillKey[]).map((k) => (
-              <button key={k} type="button" aria-pressed={state.hill === k} onClick={() => patch({ hill: k })}>
-                {HILLS[k].l}
-              </button>
-            ))}
+          <div className="tempo-form-foot">
+            <div className="drink-row">
+              <span className="lbl">Drikkestopp</span>
+              <button
+                type="button"
+                className={`switch ${state.drink ? 'on' : ''}`}
+                role="switch"
+                aria-checked={state.drink}
+                aria-label="Drikkestopp"
+                onClick={() => patch({ drink: !state.drink })}
+              />
+              <input
+                className="stop"
+                type="number"
+                min={0}
+                max={120}
+                aria-label="Sekunder per stopp"
+                disabled={!state.drink}
+                value={state.stopOn}
+                onChange={(e) => patch({ stopOn: Math.max(0, Math.min(120, Number(e.target.value) || 0)) })}
+              />
+              <span className="hint">s / stopp</span>
+            </div>
+            <div className="tempo-start">
+              <label className="lbl" htmlFor="starttid">
+                Starttid
+              </label>
+              <input
+                id="starttid"
+                type="time"
+                value={state.dist === 'full' ? state.startFull : state.startHalf}
+                onChange={(e) => patch(state.dist === 'full' ? { startFull: e.target.value } : { startHalf: e.target.value })}
+              />
+            </div>
+            <p className="help tempo-drink-hint">
+              {nStops} stasjoner × {plan.input.stopSec} s = {plan.S} s stopptid totalt.
+            </p>
           </div>
-          <p className="help">{HILLS[state.hill].t}</p>
-
-          <div className="drink-row">
-            <span className="lbl">Drikkestopp</span>
-            <button
-              type="button"
-              className={`switch ${state.drink ? 'on' : ''}`}
-              role="switch"
-              aria-checked={state.drink}
-              aria-label="Drikkestopp"
-              onClick={() => patch({ drink: !state.drink })}
-            />
-            <input
-              className="stop"
-              type="number"
-              min={0}
-              max={120}
-              aria-label="Sekunder per stopp"
-              disabled={!state.drink}
-              value={state.stopOn}
-              onChange={(e) => patch({ stopOn: Math.max(0, Math.min(120, Number(e.target.value) || 0)) })}
-            />
-            <span className="hint">s / stopp</span>
-          </div>
-          <label className="lbl" htmlFor="starttid">
-            Starttid
-          </label>
-          <input
-            id="starttid"
-            type="time"
-            value={state.dist === 'full' ? state.startFull : state.startHalf}
-            onChange={(e) => patch(state.dist === 'full' ? { startFull: e.target.value } : { startHalf: e.target.value })}
-          />
-          <p className="help">
-            {nStops} stasjoner × {plan.input.stopSec} s = {plan.S} s.
-            {!state.drink && ' Av: 2 s per stasjon, fordi du uansett mister litt tid i kaoset rundt stasjonene.'}
-          </p>
         </div>
 
         <div className="result-col">
@@ -238,6 +260,7 @@ export function TempoPlan() {
             </p>
           </div>
         </div>
+        <StepContinue id="tempo-step-continue" step={3} label="Anbefalt løpeplan" onClick={goToLopeplan} />
       </div>
       <details className="explain">
         <summary>Slik regner planen</summary>

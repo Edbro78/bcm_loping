@@ -5,6 +5,7 @@ import { HoverProvider } from './state/active';
 import { SiteLayout } from './components/SiteLayout';
 import { NotFoundPage } from './components/NotFoundPage';
 import { HomePage } from './pages/HomePage';
+import { HoydeprofilPage } from './pages/HoydeprofilPage';
 import { LoypeguidePage } from './pages/LoypeguidePage';
 import { TempoplanPage } from './pages/TempoplanPage';
 import { TempostrategiPage } from './pages/TempostrategiPage';
@@ -23,6 +24,7 @@ export function App() {
             <Route element={<SiteLayout />}>
               <Route index element={<HomePage />} />
               <Route path="loypeguide" element={<LoypeguidePage />} />
+              <Route path="hoydeprofil" element={<HoydeprofilPage />} />
               <Route path="tempoplan" element={<TempoplanPage />} />
               <Route path="tempostrategi" element={<TempostrategiPage />} />
               <Route path="praktisk" element={<PraktiskPage />} />

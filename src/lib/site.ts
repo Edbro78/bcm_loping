@@ -32,6 +32,13 @@ export const ROUTES: RouteMeta[] = [
     schema: 'article',
   },
   {
+    path: '/hoydeprofil',
+    title: 'Høydeprofil og kart – Bergen City Marathon 2027',
+    description:
+      'Interaktiv høydeprofil og kart over BCM-løypa: stigning mot Fjellveien, etapper og drikkestasjoner.',
+    schema: 'article',
+  },
+  {
     path: '/tempoplan',
     title: 'Tempoplan og kalkulator – Bergen City Marathon',
     description:

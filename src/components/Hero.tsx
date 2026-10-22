@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { CalendarRange, Flag, Route, Timer, type LucideIcon } from 'lucide-react';
+import { CalendarRange, ClipboardList, Flag, Route, Timer, type LucideIcon } from 'lucide-react';
 import { RACE_START } from '../config';
 import { LAP } from '../config';
 import { elevAt } from '../lib/gpx';
 import { useCourse } from '../state/course';
-import { scrollToId, usePlan, type PlanState } from '../state/plan';
+import { scrollToView, usePlan, type PlanState } from '../state/plan';
 
 function Countdown({ dist }: { dist: 'half' | 'full' }) {
   const [now, setNow] = useState(() => Date.now());
@@ -42,6 +42,7 @@ const STEPS: { icon: LucideIcon; text: string; view: PlanState['view'] }[] = [
   { icon: Timer, text: 'Ønsket sluttid', view: 'plan' },
   { icon: Route, text: 'Anbefalt løpeplan', view: 'splits' },
   { icon: CalendarRange, text: 'Anbefalte milepæler siste 90 dager av treningen', view: 'mile' },
+  { icon: ClipboardList, text: 'Oppsummering', view: 'oppsummering' },
 ];
 
 const PLACES: [number, string][] = [
@@ -59,7 +60,7 @@ export function Hero() {
 
   function goToStep(view: PlanState['view']) {
     patch({ view });
-    requestAnimationFrame(() => scrollToId('faner'));
+    scrollToView(view);
   }
 
   return (
