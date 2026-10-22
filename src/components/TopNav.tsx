@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { OwnerDeviceSeg, OwnerLangSeg } from './OwnerToolbar';
 import { useUi } from '../i18n/useUi';
-import { showOwnerTools, useMobileLayout } from '../state/previewLocale';
+import { showOwnerTools } from '../state/previewLocale';
 
 const ROUTES: { to: string; key: 'home' | 'loypeguide' | 'hoydeprofil' | 'tempoplan' | 'tempostrategi' | 'praktisk' | 'trening' | 'om' }[] = [
   { to: '/', key: 'home' },
@@ -42,7 +42,6 @@ export function TopNav() {
   const drawerRef = useRef<HTMLDetailsElement>(null);
   const { pathname } = useLocation();
   const m = useUi();
-  const mobileLayout = useMobileLayout();
   const ownerTools = showOwnerTools();
   const activeKey = ROUTES.find((r) => r.to === pathname)?.key ?? 'home';
 
@@ -74,7 +73,7 @@ export function TopNav() {
           </svg>
           <span>{m.brand}</span>
         </Link>
-        {(mobileLayout || ownerTools) && <OwnerLangSeg />}
+        <OwnerLangSeg />
         {ownerTools && <OwnerDeviceSeg />}
         <details className="nav-drawer" ref={drawerRef}>
           <summary className="nav-drawer-trigger">
