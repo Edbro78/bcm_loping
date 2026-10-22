@@ -53,12 +53,20 @@ export function ChartHover({
   PR: number;
 }) {
   const { km } = useHover();
+  const m = useUi();
   if (km == null || !plan.segs.length) return null;
   const x = PL + (km / plan.D) * (W - PL - PR);
   const s = segAt(plan, km);
   const ele = Math.round(elevAt(points, km));
   const pace = s.d > 0 ? (s.t + s.stop) / s.d : plan.p0;
-  const label = `Km ${kmL(km)} · ${ele} moh · ${sgn(s.g)} % · ${fmtT(plan.tAt(km))} (kl. ${clockDot(plan.input.start, plan.tAt(km))}) · ${fmtP(pace)}/km`;
+  const label = m.charts.hoverTitle
+    .replace('{km}', kmL(km))
+    .replace('{ele}', String(ele))
+    .replace('{unit}', m.charts.elevUnit)
+    .replace('{grade}', sgn(s.g))
+    .replace('{cum}', fmtT(plan.tAt(km)))
+    .replace('{clock}', clockDot(plan.input.start, plan.tAt(km)))
+    .replace('{pace}', fmtP(pace));
   const flip = x > W * 0.55;
   const tx = flip ? x - 8 : x + 8;
   const anchor = flip ? 'end' : 'start';
@@ -105,11 +113,11 @@ const EPB = 32;
 
 type ElevKind = 'climb' | 'down' | 'flat' | 'cobble';
 
-const ELEV_FACE: Record<ElevKind, { fill: string; stroke: string; label: string }> = {
-  climb: { fill: '#F6DEDB', stroke: '#B3322A', label: 'Klatring' },
-  flat: { fill: '#E9EEF0', stroke: '#2F5573', label: 'Flatt' },
-  down: { fill: '#C5D4E0', stroke: '#12304A', label: 'Nedover' },
-  cobble: { fill: '#FBEFD6', stroke: '#9A6A12', label: 'Brostein' },
+const ELEV_STYLE: Record<ElevKind, { fill: string; stroke: string }> = {
+  climb: { fill: '#F6DEDB', stroke: '#B3322A' },
+  flat: { fill: '#E9EEF0', stroke: '#2F5573' },
+  down: { fill: '#C5D4E0', stroke: '#12304A' },
+  cobble: { fill: '#FBEFD6', stroke: '#9A6A12' },
 };
 
 function elevKind(km: number, grade: number): ElevKind {
@@ -122,6 +130,7 @@ function elevKind(km: number, grade: number): ElevKind {
 
 export function ElevationSvg({ plan, points, width }: { plan: Plan; points: Pt[]; width: number }) {
   const { km, setKm } = useHover();
+  const m = useUi();
   const W = width;
   const H = W < 560 ? 340 : 460;
   const D = plan.D;
@@ -164,7 +173,7 @@ export function ElevationSvg({ plan, points, width }: { plan: Plan; points: Pt[]
         height={H}
         preserveAspectRatio="none"
         role="img"
-        aria-label="Høydeprofil for løypa, farget etter terreng"
+        aria-label={m.charts.elevAria}
         tabIndex={0}
         onKeyDown={(e) => {
           const cur = km ?? 0;
@@ -194,14 +203,14 @@ export function ElevationSvg({ plan, points, width }: { plan: Plan; points: Pt[]
           </g>
         ))}
         <text x={8} y={EPT + 12} className="ax mute">
-          moh
+          {m.charts.elevUnit}
         </text>
         <g className="elev-draw" filter="url(#elev-ridge)">
           {runs.map((run, i) => (
-            <path key={`a${i}`} d={run.area} fill={ELEV_FACE[run.kind].fill} />
+            <path key={`a${i}`} d={run.area} fill={ELEV_STYLE[run.kind].fill} />
           ))}
           {runs.map((run, i) => (
-            <path key={`l${i}`} d={run.line} fill="none" stroke={ELEV_FACE[run.kind].stroke} strokeWidth={2.6} strokeLinejoin="round" strokeLinecap="round" />
+            <path key={`l${i}`} d={run.line} fill="none" stroke={ELEV_STYLE[run.kind].stroke} strokeWidth={2.6} strokeLinejoin="round" strokeLinecap="round" />
           ))}
         </g>
         {plan.stations.map((st) => (
@@ -214,21 +223,21 @@ export function ElevationSvg({ plan, points, width }: { plan: Plan; points: Pt[]
           <g>
             <line x1={X(LAP)} x2={X(LAP)} y1={EPT} y2={H - EPB} stroke="#B3322A" strokeDasharray="4 3" />
             <text x={X(LAP) + 6} y={EPT + 14} className="ax cut">
-              Halvveis · cut-off 10.45
+              {m.charts.halfwayCutoff}
             </text>
           </g>
         )}
         <g>
           <circle cx={X(peak.k)} cy={Y(peak.e)} r={4.5} fill="#E2A63A" stroke="#fff" strokeWidth={1.5} />
           <text x={X(Math.min(6.2, D))} y={labelY(6.2, 18)} textAnchor="middle" className="place">
-            Fjellveien
+            {m.charts.fjellveien}
           </text>
           <text x={X(Math.min(18.1, D))} y={labelY(18.1, 16)} textAnchor="middle" className="place cob">
-            {short ? 'Munkeb.' : 'Munkebekksmauet'}
+            {short ? m.charts.munkeShort : m.charts.munkeFull}
           </text>
           {plan.input.full && (
             <text x={X(Math.min(18.1 + LAP, D))} y={labelY(18.1 + LAP, 16)} textAnchor="middle" className="place cob">
-              {short ? 'Munkeb.' : 'Munkebekksmauet'}
+              {short ? m.charts.munkeShort : m.charts.munkeFull}
             </text>
           )}
         </g>
@@ -243,9 +252,9 @@ export function ElevationSvg({ plan, points, width }: { plan: Plan; points: Pt[]
         <ChartHover plan={plan} points={points} W={W} H={H} PL={EPL} PR={EPR} />
       </svg>
       <div className="chips" aria-hidden="true">
-        {(Object.keys(ELEV_FACE) as ElevKind[]).map((k) => (
-          <span key={k} className="chip" style={{ background: ELEV_FACE[k].fill, color: ELEV_FACE[k].stroke }}>
-            <i style={{ background: ELEV_FACE[k].stroke }} /> {ELEV_FACE[k].label}
+        {(Object.keys(ELEV_STYLE) as ElevKind[]).map((k) => (
+          <span key={k} className="chip" style={{ background: ELEV_STYLE[k].fill, color: ELEV_STYLE[k].stroke }}>
+            <i style={{ background: ELEV_STYLE[k].stroke }} /> {m.terrain[k]}
           </span>
         ))}
       </div>
@@ -271,6 +280,7 @@ export function PaceSvg({
   height?: number;
 }) {
   const { km, setKm } = useHover();
+  const m = useUi();
   const W = width;
   const H = height;
   const D = plan.D;
@@ -321,7 +331,7 @@ export function PaceSvg({
       width="100%"
       height={H}
       role="img"
-      aria-label="Målfart og høyde langs løypa"
+      aria-label={m.charts.paceAria}
       tabIndex={0}
       onKeyDown={(e) => {
         const cur = km ?? 0;
@@ -345,7 +355,7 @@ export function PaceSvg({
         </g>
       ))}
       <text x={W - 4} y={H - 8} textAnchor="end" className="ax mute">
-        min/km
+        {m.charts.paceUnit}
       </text>
       <path d={elev} fill="none" stroke="#8AA3B8" strokeWidth={1.25} />
       <path d={gapD} fill="none" stroke="#2F5573" strokeWidth={1.5} strokeDasharray="5 4" />

@@ -1,3 +1,4 @@
+import { useUi } from '../i18n/useUi';
 import { usePreviewLocale } from '../state/previewLocale';
 
 function FlagNorway() {
@@ -26,14 +27,15 @@ function FlagBritain() {
 
 export function OwnerDeviceSeg() {
   const { device, setDevice } = usePreviewLocale();
+  const o = useUi().owner;
   return (
-    <div className="owner-device" role="group" aria-label="Enhet">
+    <div className="owner-device" role="group" aria-label={o.device}>
       <div className="seg owner-seg owner-seg--device">
         <button type="button" aria-pressed={device === 'desktop'} onClick={() => setDevice('desktop')}>
-          PC
+          {o.pc}
         </button>
         <button type="button" aria-pressed={device === 'mobile'} onClick={() => setDevice('mobile')}>
-          Mobil
+          {o.mobile}
         </button>
       </div>
     </div>
@@ -42,13 +44,14 @@ export function OwnerDeviceSeg() {
 
 export function OwnerLangSeg() {
   const { locale, setLocale } = usePreviewLocale();
+  const o = useUi().owner;
   return (
-    <div className="owner-lang" role="group" aria-label="Språk">
+    <div className="owner-lang" role="group" aria-label={o.language}>
       <div className="seg owner-seg owner-seg--lang">
         <button
           type="button"
           aria-pressed={locale === 'nb'}
-          aria-label="Norsk"
+          aria-label={o.norwegian}
           onClick={() => setLocale('nb')}
         >
           <FlagNorway />
@@ -56,7 +59,7 @@ export function OwnerLangSeg() {
         <button
           type="button"
           aria-pressed={locale === 'en'}
-          aria-label="English"
+          aria-label={o.english}
           onClick={() => setLocale('en')}
         >
           <FlagBritain />
@@ -67,8 +70,9 @@ export function OwnerLangSeg() {
 }
 
 export function OwnerToolbar() {
+  const o = useUi().owner;
   return (
-    <div className="owner-tools" aria-label="Forhåndsvisning (redaktør)">
+    <div className="owner-tools" aria-label={o.preview}>
       <OwnerDeviceSeg />
       <OwnerLangSeg />
     </div>

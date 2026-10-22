@@ -3,6 +3,7 @@ import { courseId } from '../lib/gpx';
 import { planFromPoints, type Plan, type PlanInput } from '../lib/model';
 import { useCourse } from './course';
 import { usePlan } from './plan';
+import { usePreviewLocale } from './previewLocale';
 
 const HoverCtx = createContext<{ km: number | null; setKm: (k: number | null) => void }>({
   km: null,
@@ -22,6 +23,7 @@ export function useHover() {
 export function useActivePlan(): { plan: Plan | null; input: PlanInput } {
   const { state } = usePlan();
   const course = useCourse();
+  const { locale } = usePreviewLocale();
   const input = useMemo<PlanInput>(
     () => ({
       full: state.dist === 'full',
@@ -34,9 +36,9 @@ export function useActivePlan(): { plan: Plan | null; input: PlanInput } {
     }),
     [state],
   );
-  const id = courseId(course.name, course.points) + JSON.stringify(input);
+  const id = courseId(course.name, course.points) + JSON.stringify(input) + locale;
   const plan = useMemo(
-    () => (course.points.length > 10 ? planFromPoints(course.points, input) : null),
+    () => (course.points.length > 10 ? planFromPoints(course.points, input, locale) : null),
     // id dekker punktene og input
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [id],

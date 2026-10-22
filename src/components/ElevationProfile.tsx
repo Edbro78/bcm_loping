@@ -1,5 +1,6 @@
 import { ElevationSvg, useBoxWidth } from './chart';
 import { sgn } from '../lib/format';
+import { useUi } from '../i18n/useUi';
 import { useActivePlan } from '../state/active';
 import { useCourse } from '../state/course';
 
@@ -7,26 +8,30 @@ export function ElevationProfile() {
   const { plan } = useActivePlan();
   const course = useCourse();
   const { ref, w } = useBoxWidth();
-  if (!plan) return <p className="intro">Laster høydeprofil…</p>;
+  const m = useUi();
+  const p = m.elevationPanel;
+  if (!plan) return <p className="intro">{p.loading}</p>;
   const { up, high, steep } = plan.elev;
   return (
     <section className="section" aria-labelledby="profil-tittel">
       <div className="section-head">
         <div>
-          <h2 id="profil-tittel">Høydeprofil</h2>
-          <p className="intro">Nesten all stigning ligger mellom km 3 og 8. Hold markøren over grafen for å se punktet i kartet.</p>
+          <h2 id="profil-tittel">{p.h2}</h2>
+          <p className="intro">{p.intro}</p>
         </div>
         <div className="kpis three">
           <div className="kpi">
-            <span>Høydemeter opp</span>
+            <span>{p.elevUp}</span>
             <b>{Math.round(up)} m</b>
           </div>
           <div className="kpi">
-            <span>Høyeste punkt</span>
-            <b>{Math.round(high)} moh</b>
+            <span>{p.elevHigh}</span>
+            <b>
+              {Math.round(high)} {p.moh}
+            </b>
           </div>
           <div className="kpi">
-            <span>Bratteste 100 m</span>
+            <span>{p.elevSteep}</span>
             <b>{sgn(steep)} %</b>
           </div>
         </div>
@@ -34,8 +39,8 @@ export function ElevationProfile() {
       <div className="card elev-card" ref={ref}>
         <ElevationSvg plan={plan} points={course.points} width={w} />
         <p className="help">
-          {course.status === 'ok' ? 'Høyder fra GPX, glattet over 50 m.' : 'Høyder fra reserveprofil, fordi GPX mangler.'}{' '}
-          {plan.input.full && 'Maraton er to runder på halvmaratonløypa.'}
+          {course.status === 'ok' ? p.helpGpx : p.helpFallback}{' '}
+          {plan.input.full && p.fullLaps}
         </p>
       </div>
     </section>

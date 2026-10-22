@@ -4,12 +4,12 @@ import {
   HILLS,
   HillKey,
   LAP,
-  MAX_TIME,
   SplitKey,
   STATIONS,
   FULL_EXTRA_STATION,
 } from '../config';
-import { fmtP, fmtT, kmL, listNb } from './format';
+import { planWarningsFor } from '../i18n/planWarnings';
+import { fmtP, fmtT, kmL } from './format';
 import { elevAt as elevAtPts, type Pt } from './gpx';
 
 export function gapF(g: number): number {
@@ -160,66 +160,7 @@ export function cutoffExceeded(start: string, passSec: number): boolean {
   return pass > cut;
 }
 
-function warningsFor(planBits: {
-  input: PlanInput;
-  D: number;
-  segs: Seg[];
-  tAt: (x: number) => number;
-  agg: (a: number, b: number) => Agg;
-}): Warning[] {
-  const { input, D, tAt, agg } = planBits;
-  const out: Warning[] = [];
-  if (input.full && cutoffExceeded(input.start, tAt(LAP))) {
-    const pass = tAt(LAP);
-    const [h, m] = input.start.split(':').map(Number);
-    const total = (h * 3600 + m * 60 + pass) % 86400;
-    const hh = Math.floor(total / 3600);
-    const mm = Math.floor((total % 3600) / 60);
-    const clock = `${String(hh).padStart(2, '0')}.${String(mm).padStart(2, '0')}`;
-    out.push({
-      level: 'error',
-      title: 'Cut-off kl. 10.45',
-      text: `Planen gir passering på Bryggen kl. ${clock}. Du blir stoppet og godkjent for halvmaraton.`,
-    });
-  }
-  const max = input.full ? MAX_TIME.full : MAX_TIME.half;
-  if (input.T > max) {
-    out.push({
-      level: 'error',
-      title: 'Over makstid',
-      text: `Makstiden er 4 timer for halv / 6 timer for hel. Målet ditt er ${fmtT(input.T)}.`,
-    });
-  }
-  const bad: { km: string; pace: number }[] = [];
-  for (let a = 0; a < D - 1e-6; a += 1) {
-    const b = Math.min(D, a + 1);
-    const g = agg(a, b);
-    const pace = g.len > 0 ? (g.t + g.stops) / g.len : 0;
-    if (pace < 180 || pace > 720) bad.push({ km: String(Math.round(a + 1)), pace });
-  }
-  if (bad.length) {
-    const paces = bad.map((b) => b.pace);
-    const lo = Math.min(...paces);
-    const hi = Math.max(...paces);
-    const paceTxt =
-      Math.abs(lo - hi) < 1 ? `${fmtP(lo)}/km` : `${fmtP(lo)}–${fmtP(hi)}/km`;
-    out.push({
-      level: 'warn',
-      title: 'Urealistisk mål',
-      text: `Km ${listNb(bad.map((b) => b.km))} får målfart ${paceTxt} – utenfor 3:00–12:00/km.`,
-    });
-  }
-  if (input.hill === 'fort' && input.split === 'positiv') {
-    out.push({
-      level: 'warn',
-      title: 'Høy risiko',
-      text: 'Fort i bakkene kombinert med positiv split legger mye innsats tidlig. Motbakkene på km 3–8 kan koste mer enn de gir.',
-    });
-  }
-  return out;
-}
-
-export function buildPlan(elev: (k: number) => number, input: PlanInput): Plan {
+export function buildPlan(elev: (k: number) => number, input: PlanInput, locale: import('../state/previewLocale').Locale = 'nb'): Plan {
   const rounds = roundSegments(elev);
   const stations = stationList(input.full);
   const { segs, p0, S } = buildSegs(rounds, input, stations);
@@ -280,12 +221,12 @@ export function buildPlan(elev: (k: number) => number, input: PlanInput): Plan {
     tAt,
     agg,
     elev: elevInfo,
-    warnings: warningsFor(partial),
+    warnings: planWarningsFor(partial, locale),
   };
 }
 
-export function planFromPoints(pts: Pt[], input: PlanInput): Plan {
-  return buildPlan((k) => elevAtPts(pts, k), input);
+export function planFromPoints(pts: Pt[], input: PlanInput, locale: import('../state/previewLocale').Locale = 'nb'): Plan {
+  return buildPlan((k) => elevAtPts(pts, k), input, locale);
 }
 
 export function gradeOf(agg: Agg): number {

@@ -400,6 +400,7 @@ html.preview-mobile { background: #12161c; }
     linear-gradient(115deg, #ff7a2f 0%, #f05a1a 46%, #e24a0c 100%);
   color: #fff;
   padding: 56px 20px 28px;
+  overflow: visible;
 }
 .hero-grid { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 32px; }
 .kicker { font-size: 13px; font-weight: 600; letter-spacing: 0.04em; color: #fff; margin-bottom: 8px; }
@@ -583,19 +584,31 @@ html.preview-mobile { background: #12161c; }
   cursor: pointer;
   touch-action: none;
 }
-.spark path { fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.spark path.track,
+.spark path.run {
+  fill: none;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 .spark path.track { stroke: rgb(255 255 255 / 0.22); }
 .spark path.run { stroke: #fff; }
 .spark circle { fill: #fff; }
 .spark .runner { fill: #fff; stroke: var(--c-bcm-700); stroke-width: 2; }
 .spark .runner-fig { pointer-events: none; }
-.spark .runner-fig .runner-head { fill: #fff; stroke: none; }
+.spark .runner-fig .runner-head {
+  fill: #fff;
+  stroke: var(--c-bcm-700);
+  stroke-width: 1.25;
+}
 .spark .runner-fig .runner-body {
   fill: none;
   stroke: #fff;
   stroke-width: 3;
   stroke-linecap: round;
   stroke-linejoin: round;
+  paint-order: stroke fill;
+  filter: drop-shadow(0 0 1px var(--c-bcm-700));
 }
 .spark text { fill: rgb(255 255 255 / 0.75); font-size: 13px; font-weight: 600; }
 .spark .spark-km { fill: #fff; font-size: 12px; font-weight: 650; }
@@ -1291,7 +1304,32 @@ tr.cut-band td, tr.steep-note td { text-align: left; background: #f6dedb; color:
   .section-head { flex-direction: column; align-items: flex-start; }
   .map-2d { min-height: 280px; height: 62vh; }
   .map-3d { min-height: 300px; height: 68vh; }
-  .fly-hud { width: min(292px, 100%); }
+  .fly-bar { left: 8px; bottom: 12px; gap: 6px; max-width: calc(100% - 16px); }
+  .fly-hud {
+    width: auto;
+    max-width: none;
+    max-height: none;
+    overflow: visible;
+    padding: 4px 8px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 2px 6px;
+    box-shadow: 0 1px 4px rgb(16 24 40 / 0.12);
+  }
+  .fly-label {
+    flex: 0 0 100%;
+    margin: 0;
+    font-size: 8px;
+    letter-spacing: 0.05em;
+    line-height: 1;
+  }
+  .fly-time { margin: 0; font-size: 15px; line-height: 1.1; }
+  .fly-km { margin: 0; font-size: 11px; font-weight: 600; color: var(--c-fjord-500); line-height: 1.1; }
+  .fly-stop { flex: 0 0 100%; margin: 0; font-size: 9px; line-height: 1.2; }
+  .fly-hud ul { display: none; }
   .card.result .kpis { grid-template-columns: 1fr 1fr; }
   .card.result .result-hero .flat b { font-size: 44px; }
   .split-2.tempo-split-2 { grid-template-columns: 1fr; }
@@ -1301,6 +1339,56 @@ tr.cut-band td, tr.steep-note td { text-align: left; background: #f6dedb; color:
 }
 @media (max-width: 520px) {
   .steps li { flex-basis: min(152px, 78vw); }
+  .fly-hud { padding: 3px 7px; border-radius: 6px; gap: 1px 5px; }
+  .fly-time { font-size: 14px; }
+  .fly-km { font-size: 10px; }
+}
+
+/* Telefonramme / smal mobil: HUD skal ikke skjule flymarkøren */
+html.site-mobile .map-shell .fly-hud,
+.preview-phone-frame .map-shell .fly-hud {
+  width: auto;
+  max-width: none;
+  max-height: none;
+  padding: 3px 7px;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 1px 5px;
+  box-shadow: 0 1px 3px rgb(16 24 40 / 0.1);
+}
+html.site-mobile .map-shell .fly-label,
+.preview-phone-frame .map-shell .fly-label {
+  flex: 0 0 100%;
+  margin: 0;
+  font-size: 8px;
+  line-height: 1;
+}
+html.site-mobile .map-shell .fly-time,
+.preview-phone-frame .map-shell .fly-time {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.1;
+}
+html.site-mobile .map-shell .fly-km,
+.preview-phone-frame .map-shell .fly-km {
+  margin: 0;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--c-fjord-500);
+  line-height: 1.1;
+}
+html.site-mobile .map-shell .fly-hud ul,
+.preview-phone-frame .map-shell .fly-hud ul {
+  display: none;
+}
+html.site-mobile .map-shell .fly-bar,
+.preview-phone-frame .map-shell .fly-bar {
+  left: 6px;
+  bottom: 10px;
+  gap: 5px;
 }
 
 /* Mobil / telefonramme: 3+2 steg (overstyrer 5-kolonne desktop og 720px flex-scroll) */

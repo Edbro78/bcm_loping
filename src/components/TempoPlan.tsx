@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Clock, Droplet, Flag, Gauge, Info, type LucideIcon } from 'lucide-react';
-import { HILLS, MAX_TIME, QUICK } from '../config';
+import { MAX_TIME, QUICK } from '../config';
 import type { HillKey, SplitKey } from '../config';
+import { hillCopy } from '../i18n/hills';
 import { clockDot, fmtP, fmtT, parseT, quickLabel, sgnS } from '../lib/format';
 import { useActivePlan } from '../state/active';
 import { StepContinue } from './StepContinue';
 import { useUi } from '../i18n/useUi';
+import { usePreviewLocale } from '../state/previewLocale';
 import { scrollToView, usePlan } from '../state/plan';
 
 const TIME_RANGE = {
@@ -17,10 +19,12 @@ function TimeSlider({
   dist,
   seconds,
   onChange,
+  copy,
 }: {
   dist: 'half' | 'full';
   seconds: number;
   onChange: (sec: number) => void;
+  copy: ReturnType<typeof useUi>['tempoPlan'];
 }) {
   const { min, max } = TIME_RANGE[dist];
   const minM = min / 60;
@@ -28,14 +32,14 @@ function TimeSlider({
   const value = Math.min(maxM, Math.max(minM, Math.round(seconds / 60)));
   return (
     <label className="slider">
-      <span>Sluttid {fmtT(value * 60)}</span>
+      <span>{copy.finishTime.replace('{time}', fmtT(value * 60))}</span>
       <input
         type="range"
         min={minM}
         max={maxM}
         step={1}
         value={value}
-        aria-label="Sluttid"
+        aria-label={copy.finishTimeAria}
         aria-valuemin={minM}
         aria-valuemax={maxM}
         aria-valuenow={value}
@@ -62,14 +66,21 @@ export function TempoPlan() {
   }, [T, focus, state.dist]);
 
   const m = useUi();
-  if (!plan) return <p className="intro">{m.tempoPlan.loading}</p>;
+  const tp = m.tempoPlan;
+  const { locale } = usePreviewLocale();
+  if (!plan) return <p className="intro">{tp.loading}</p>;
 
   const quick = QUICK[state.dist];
   const t5 = plan.tAt(5);
   const even5 = 5 * (plan.input.T / plan.D);
   const diff = t5 - even5;
+  const deltaStr = sgnS(diff).replace('+', '').replace('−', '−');
   const behind =
-    Math.abs(diff) < 0.5 ? 'på jevn snittfart' : `${diff > 0 ? sgnS(diff).replace('+', '') : sgnS(diff).replace('−', '')} ${diff > 0 ? 'bak' : 'foran'} jevn snittfart`;
+    Math.abs(diff) < 0.5
+      ? tp.paceEven
+      : diff > 0
+        ? tp.paceBehind.replace('{delta}', deltaStr)
+        : tp.paceAhead.replace('{delta}', deltaStr.replace('−', ''));
   const halfT = plan.tAt(plan.D / 2);
   const nStops = plan.stations.length;
 
@@ -86,15 +97,13 @@ export function TempoPlan() {
 
   return (
     <section className="section tempo-section" aria-labelledby="tempo-tittel">
-      <h2 id="tempo-tittel">{m.tempoPlan.h2}</h2>
-      <p className="intro tempo-intro">
-        Jevn innsats i bakkene – alt oppdateres mens du endrer, og lagres på enheten.
-      </p>
+      <h2 id="tempo-tittel">{tp.h2}</h2>
+      <p className="intro tempo-intro">{tp.intro}</p>
       <div className="split-2 tempo-split-2">
         <div className="card tempo-form-card">
           <div className="tempo-form-top">
             <label className="lbl" htmlFor="maal">
-              Mål-sluttid
+              {tp.targetLabel}
             </label>
             <div className="target-row">
               <input
@@ -120,30 +129,30 @@ export function TempoPlan() {
                   if (p != null && p > 0) patch(state.dist === 'full' ? { targetFull: p } : { targetHalf: p });
                 }}
               />
-              <span className="hint">{fmtP(T / plan.D)}/km i snitt</span>
+              <span className="hint">{tp.targetAvg.replace('{pace}', fmtP(T / plan.D))}</span>
             </div>
-            <div className="pills" role="group" aria-label="Hurtigvalg">
+            <div className="pills" role="group" aria-label={tp.quickGroup}>
               {quick.map((s) => (
                 <button key={s} type="button" className={`pill ${T === s ? 'on' : ''}`} onClick={() => setTarget(s)}>
                   {quickLabel(s)}
                 </button>
               ))}
             </div>
-            <TimeSlider dist={state.dist} seconds={T} onChange={setTarget} />
+            <TimeSlider dist={state.dist} seconds={T} onChange={setTarget} copy={tp} />
           </div>
 
           <div className="tempo-form-mid">
             <div className="tempo-form-cell">
-              <p className="lbl">Split-strategi</p>
-              <div className="seg" role="group" aria-label="Split-strategi">
+              <p className="lbl">{tp.labels.split}</p>
+              <div className="seg" role="group" aria-label={tp.labels.split}>
                 {(['negativ', 'jevn', 'positiv'] as SplitKey[]).map((k) => (
                   <button key={k} type="button" aria-pressed={state.split === k} onClick={() => patch({ split: k })}>
-                    {k === 'negativ' ? 'Negativ' : k === 'jevn' ? 'Jevn' : 'Positiv'}
+                    {m.split[k]}
                   </button>
                 ))}
               </div>
               <label className={`slider ${state.split === 'jevn' ? 'off' : ''}`}>
-                <span>Split σ {state.sigma.toFixed(1).replace('.', ',')} %</span>
+                <span>{tp.splitSigma.replace('{sigma}', state.sigma.toFixed(1).replace('.', locale === 'nb' ? ',' : '.'))}</span>
                 <input
                   type="range"
                   min={0}
@@ -156,33 +165,33 @@ export function TempoPlan() {
               </label>
             </div>
             <div className="tempo-form-cell">
-              <p className="lbl">Bakkestrategi</p>
-              <div className="seg" role="group" aria-label="Bakkestrategi" title={HILLS[state.hill].t}>
+              <p className="lbl">{tp.labels.hill}</p>
+              <div className="seg" role="group" aria-label={tp.labels.hill} title={hillCopy(locale, state.hill).t}>
                 {(['fort', 'middels', 'sakte'] as HillKey[]).map((k) => (
                   <button
                     key={k}
                     type="button"
                     aria-pressed={state.hill === k}
-                    title={HILLS[k].t}
+                    title={hillCopy(locale, k).t}
                     onClick={() => patch({ hill: k })}
                   >
-                    {HILLS[k].l}
+                    {hillCopy(locale, k).l}
                   </button>
                 ))}
               </div>
-              <p className="help tempo-hill-hint">{HILLS[state.hill].t}</p>
+              <p className="help tempo-hill-hint">{hillCopy(locale, state.hill).t}</p>
             </div>
           </div>
 
           <div className="tempo-form-foot">
             <div className="drink-row">
-              <span className="lbl">Drikkestopp</span>
+              <span className="lbl">{tp.labels.drink}</span>
               <button
                 type="button"
                 className={`switch ${state.drink ? 'on' : ''}`}
                 role="switch"
                 aria-checked={state.drink}
-                aria-label="Drikkestopp"
+                aria-label={tp.drinkAria}
                 onClick={() => patch({ drink: !state.drink })}
               />
               <input
@@ -190,16 +199,16 @@ export function TempoPlan() {
                 type="number"
                 min={0}
                 max={120}
-                aria-label="Sekunder per stopp"
+                aria-label={tp.stopSecAria}
                 disabled={!state.drink}
                 value={state.stopOn}
                 onChange={(e) => patch({ stopOn: Math.max(0, Math.min(120, Number(e.target.value) || 0)) })}
               />
-              <span className="hint">s / stopp</span>
+              <span className="hint">{tp.secPerStop}</span>
             </div>
             <div className="tempo-start">
               <label className="lbl" htmlFor="starttid">
-                Starttid
+                {tp.startTime}
               </label>
               <input
                 id="starttid"
@@ -209,7 +218,10 @@ export function TempoPlan() {
               />
             </div>
             <p className="help tempo-drink-hint">
-              {nStops} stasjoner × {plan.input.stopSec} s = {plan.S} s stopptid totalt.
+              {tp.stationsTotal
+                .replace('{n}', String(nStops))
+                .replace('{sec}', String(plan.input.stopSec))
+                .replace('{total}', String(plan.S))}
             </p>
           </div>
         </div>
@@ -223,14 +235,14 @@ export function TempoPlan() {
           ))}
           <div className="card result">
             <div className="result-hero">
-              <p className="lbl">Flatfart p₀</p>
+              <p className="lbl">{tp.labels.flatP0}</p>
               <p className="flat">
                 <b>{fmtP(plan.p0)}</b>
-                <span> /km</span>
+                <span> {tp.perKm}</span>
               </p>
               {state.hill !== 'middels' && (
                 <p className="pill-note">
-                  Flatfart: {fmtP(plan.p0)}/km (Middels: {fmtP(plan.p0mid)}/km)
+                  {tp.flatNote.replace('{cur}', fmtP(plan.p0)).replace('{mid}', fmtP(plan.p0mid))}
                 </p>
               )}
             </div>
@@ -241,42 +253,41 @@ export function TempoPlan() {
               </div>
               <div className="split-vis-key">
                 <span>
-                  <i /> 1. halvdel <b>{fmtT(halfT)}</b>
+                  <i /> {tp.half1} <b>{fmtT(halfT)}</b>
                 </span>
                 <span>
-                  <i /> 2. halvdel <b>{fmtT(plan.input.T - halfT)}</b>
+                  <i /> {tp.half2} <b>{fmtT(plan.input.T - halfT)}</b>
                 </span>
               </div>
             </div>
             <div className="kpis">
-              <Kpi icon={Gauge} label="Snittfart" value={`${fmtP(plan.input.T / plan.D)}/km`} />
-              <Kpi icon={Flag} label="Halvveis" value={fmtT(halfT)} hint={`kl. ${clockDot(plan.input.start, halfT)}`} />
-              <Kpi icon={Droplet} label="Stopptid" value={`${Math.round(plan.S)} s`} />
-              <Kpi icon={Clock} label="I mål kl." value={clockDot(plan.input.start, plan.input.T)} />
+              <Kpi icon={Gauge} label={tp.kpiAvg} value={`${fmtP(plan.input.T / plan.D)}/km`} />
+              <Kpi
+                icon={Flag}
+                label={tp.kpiHalf}
+                value={fmtT(halfT)}
+                hint={tp.atClock.replace('{time}', clockDot(plan.input.start, halfT))}
+              />
+              <Kpi icon={Droplet} label={tp.kpiStops} value={`${Math.round(plan.S)} s`} />
+              <Kpi icon={Clock} label={tp.kpiFinish} value={clockDot(plan.input.start, plan.input.T)} />
             </div>
             <p className="note">
               <Info size={16} strokeWidth={1.75} />
               <span>
-                Ved 5 km: {fmtT(t5)}, dvs. {behind}. Det er riktig, ikke et etterslep – klatringen mot Fjellveien ligger her.
+                {tp.note5k.replace('{t5}', fmtT(t5)).replace('{behind}', behind)}
               </span>
             </p>
           </div>
         </div>
-        <StepContinue id="tempo-step-continue" step={3} label="Anbefalt løpeplan" onClick={goToLopeplan} />
+        <StepContinue id="tempo-step-continue" step={3} onClick={goToLopeplan} />
       </div>
       <details className="explain">
-        <summary>Slik regner planen</summary>
-        <p>
-          Hver 100 meter gjøres om til en flatekvivalent. Motbakke koster mer tid enn den samme nedoverbakken gir tilbake: f(g) = 1 + 0,033g + 0,0012g² oppover, og 1 + 0,018g + 0,0010g² nedover. Flatfarten p₀ er farten du holder der det er flatt.
-        </p>
-        <p>Middels betyr jevn innsats, ikke jevn fart. Tempoet faller i bakkene og øker nedover, slik at anstrengelsen holder seg jevn.</p>
-        <p>
-          Mellomtiden ved 5 km ligger bevisst bak jevn snittfart. Nesten all stigning kommer mellom km 3 og 8, opp mot Fjellveien. Å ligge bak klokka der er planen, ikke et etterslep.
-        </p>
-        <p>
-          Sakte i bakkene gir ofte bedre sluttid i BCM enn en jevn klokke tilsier. Bakkene mellom km 3 og 8 og brosteinen i Munkebekksmauet straffer hard innsats. Strategien henter tid på flatene og skåner lårene ned Bellevuebakken.
-        </p>
-        <p className="help">Høydedata fra GPX-filen, glattet over 50 m. Mangler filen, brukes en reserveprofil.</p>
+        <summary>{tp.labels.summaryTitle}</summary>
+        <p>{tp.explainP1}</p>
+        <p>{tp.explainP2}</p>
+        <p>{tp.explainP3}</p>
+        <p>{tp.explainP4}</p>
+        <p className="help">{tp.labels.help}</p>
       </details>
     </section>
   );

@@ -17,6 +17,7 @@ import { clockDot, dateDM, fmtP, fmtT, kmL, nb } from '../lib/format';
 import { addDays, daysBetween, lookupMilestones, rngT, slowerThan, weekKms, WEEK1 } from '../lib/milestones';
 import { useActivePlan } from '../state/active';
 import { StepContinue } from './StepContinue';
+import { useUi } from '../i18n/useUi';
 import { scrollToView, usePlan } from '../state/plan';
 
 const RACE = new Date(Date.UTC(2027, 3, 24));
@@ -24,7 +25,8 @@ const FORECAST_FROM = new Date('2027-04-15T00:00:00+02:00');
 
 export function MilePage() {
   const { plan } = useActivePlan();
-  if (!plan) return <p className="intro">Laster milepæler…</p>;
+  const m = useUi();
+  if (!plan) return <p className="intro">{m.mile.loading}</p>;
   return (
     <div className="mile">
       <MileFormkrav />
@@ -39,6 +41,8 @@ export function MilePage() {
 export function MileFormkrav() {
   const { plan } = useActivePlan();
   const { patch } = usePlan();
+  const m = useUi();
+  const mi = m.mile;
   if (!plan) return null;
 
   function goToOppsummering() {
@@ -46,59 +50,58 @@ export function MileFormkrav() {
     scrollToView('oppsummering');
   }
   const hit = lookupMilestones(plan.input.full, plan.input.T);
-  const distName = plan.input.full ? 'maraton' : 'halvmaraton';
+  const distName = plan.input.full ? mi.distFull : mi.distHalf;
   const how = hit.outside
-    ? ' – måltiden ligger utenfor tabellen, nærmeste rad brukes'
+    ? mi.howOutside
     : hit.exact
-      ? ` (raden ${hit.nearestLabel})`
-      : ` og interpolert mellom ${hit.aLabel} og ${hit.bLabel}`;
+      ? mi.howExact.replace('{row}', hit.nearestLabel)
+      : mi.howInterp.replace('{a}', hit.aLabel).replace('{b}', hit.bLabel);
   const weeks = weekKms(hit.vol);
   const peak = (hit.vol[0] + hit.vol[1]) / 2 || 1;
   const tests: { week: number; title: string; key: 'k3' | 'k5' | 'k10'; dist: number; margin: number }[] = [
-    { week: 4, title: 'Milepæl 1', key: 'k3', dist: 3, margin: 15 },
-    { week: 8, title: 'Milepæl 2', key: 'k5', dist: 5, margin: 30 },
-    { week: 10, title: 'Milepæl 3', key: 'k10', dist: 10, margin: 60 },
+    { week: 4, title: mi.milestoneTitles[0], key: 'k3', dist: 3, margin: 15 },
+    { week: 8, title: mi.milestoneTitles[1], key: 'k5', dist: 5, margin: 30 },
+    { week: 10, title: mi.milestoneTitles[2], key: 'k10', dist: 10, margin: 60 },
   ];
   const phases = [
-    { a: 1, b: 4, c: '#D5DFE7', l: 'Grunntrening' },
-    { a: 5, b: 8, c: '#8AA3B8', l: 'Oppbygging' },
-    { a: 9, b: 11, c: '#12304A', l: 'Toppbelastning' },
-    { a: 12, b: 13, c: '#E9EEF0', l: 'Nedtrapping' },
+    { a: 1, b: 4, c: '#D5DFE7', l: mi.phaseLabels[0] },
+    { a: 5, b: 8, c: '#8AA3B8', l: mi.phaseLabels[1] },
+    { a: 9, b: 11, c: '#12304A', l: mi.phaseLabels[2] },
+    { a: 12, b: 13, c: '#E9EEF0', l: mi.phaseLabels[3] },
   ];
   const phaseColor = (w: number) => phases.find((p) => w >= p.a && w <= p.b)?.c ?? '#D5DFE7';
   const marks: Record<number, string> = { 4: '3 km', 8: '5 km', 10: '10 km' };
 
   return (
     <section className="section" aria-labelledby="mile-tittel">
-      <p className="kicker ink">De siste 90 dagene</p>
+      <p className="kicker ink">{mi.kicker}</p>
       <h2 id="mile-tittel">
-        Anbefalte milepæler for {distName} på {fmtT(plan.input.T)}
+        {mi.title.replace('{dist}', distName).replace('{time}', fmtT(plan.input.T))}
       </h2>
       <p className="intro">
-        Tempoplanen din sikter mot {fmtT(plan.input.T)}. Kravene under er hentet fra VDOT- og Riegel-tabellen for {distName}
-        {how}. De oppdateres når du endrer måltid i tempoplanen.
+        {mi.intro.replace('{time}', fmtT(plan.input.T)).replace('{dist}', distName).replace('{how}', how)}
       </p>
       <div className="kpis four">
         <div className="kpi card">
-          <span>Km per uke, siste 3 mnd</span>
+          <span>{mi.volKpi}</span>
           <b>{hit.vol[0]}–{hit.vol[1]}</b>
-          <em>Anbefalt ukentlig volum</em>
+          <em>{mi.volEm}</em>
         </div>
         {([
-          ['Minimum 3 km', hit.k3, 3],
-          ['Minimum 5 km', hit.k5, 5],
-          ['Minimum 10 km', hit.k10, 10],
+          [mi.min3, hit.k3, 3],
+          [mi.min5, hit.k5, 5],
+          [mi.min10, hit.k10, 10],
         ] as const).map(([label, rng, dist]) => (
           <div key={label} className="kpi card">
             <span>{label}</span>
             <b>{rngT(rng[0], rng[1])}</b>
-            <em>{fmtP(rng[1] / dist)}/km eller raskere</em>
+            <em>{mi.paceOrFaster.replace('{pace}', fmtP(rng[1] / dist))}</em>
           </div>
         ))}
       </div>
 
-      <h3>Ukentlig distanse, 13 uker</h3>
-      <div className="weeks" role="img" aria-label="Ukentlig kilometer de siste 13 ukene">
+      <h3>{mi.weeksH3}</h3>
+      <div className="weeks" role="img" aria-label={mi.weeksAria}>
         {weeks.map((km, i) => {
           const week = i + 1;
           return (
@@ -124,7 +127,7 @@ export function MileFormkrav() {
         ))}
       </div>
       <p className="help">
-        Toppukene ligger midt i anbefalt volum ({hit.vol[0]}–{hit.vol[1]} km). Uke 1 starter mandag 25.01.2027, 90 dager før løpet. Hver fjerde uke er lettere, og løpsuken er kraftig nedtrappet.
+        {mi.weeksHelp.replace('{lo}', String(hit.vol[0])).replace('{hi}', String(hit.vol[1]))}
       </p>
 
       <div className="test-grid">
@@ -136,40 +139,43 @@ export function MileFormkrav() {
             <article key={t.title} className="card">
               <p className="lbl">{t.title}</p>
               <p className="help">
-                {dateDM(day)} · {daysBetween(day, RACE)} dager før
+                {dateDM(day)} · {mi.daysBefore.replace('{days}', String(daysBetween(day, RACE)))}
               </p>
               <p className="test-time">
-                {t.dist} km på {rngT(rng[0], rng[1])}
+                {mi.testDist.replace('{dist}', String(t.dist)).replace('{range}', rngT(rng[0], rng[1]))}
               </p>
               <p className="help">({fmtP(rng[1] / t.dist)}/km)</p>
               <p className="check">
-                <CircleCheck size={16} color="#3D6A4E" /> Under {fmtT(rng[1])}: måltiden {fmtT(plan.input.T)} er realistisk.
+                <CircleCheck size={16} color="#3D6A4E" />{' '}
+                {mi.checkOk.replace('{max}', fmtT(rng[1])).replace('{goal}', fmtT(plan.input.T))}
               </p>
               <p className="check warn-line">
-                <CircleAlert size={16} color="#9A6A12" /> Over {fmtT(rng[1] + t.margin)}: tabellen peker mot {slower} eller tregere.
+                <CircleAlert size={16} color="#9A6A12" />{' '}
+                {mi.checkWarn
+                  .replace('{over}', fmtT(rng[1] + t.margin))
+                  .replace('{slower}', slower ?? '')}
               </p>
             </article>
           );
         })}
       </div>
 
-      <StepContinue id="mile-step-continue" step={5} label="Oppsummering" onClick={goToOppsummering} />
+      <StepContinue id="mile-step-continue" step={5} onClick={goToOppsummering} />
 
       <div className="section-head">
-        <h3>Kravsmatrise, {distName}</h3>
-        <p className="help">Din VDOT ≈ {nb(hit.vdot, 1)}</p>
+        <h3>{mi.matrixH3.replace('{dist}', distName)}</h3>
+        <p className="help">{mi.vdot.replace('{v}', nb(hit.vdot, 1))}</p>
       </div>
       <div className="table-wrap">
         <table className="data matrix">
           <thead>
             <tr>
               <th scope="col" />
-              <th scope="col">Måltid</th>
-              <th scope="col">VDOT</th>
-              <th scope="col">Min. 3 km</th>
-              <th scope="col">Min. 5 km</th>
-              <th scope="col">Min. 10 km</th>
-              <th scope="col">Km/uke</th>
+              {mi.matrixHeaders.map((h) => (
+                <th key={h} scope="col">
+                  {h}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
@@ -193,9 +199,7 @@ export function MileFormkrav() {
           </tbody>
         </table>
       </div>
-      <p className="help">
-        Kilde: VDOT (Jack Daniels) og Riegel-formelen, med anbefalt ukevolum de siste tre månedene. Testtidene gjelder flat vei. Mellom to rader interpoleres kravene lineært.
-      </p>
+      <p className="help">{mi.matrixFooter}</p>
     </section>
   );
 }

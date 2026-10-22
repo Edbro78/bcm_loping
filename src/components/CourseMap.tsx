@@ -2,13 +2,15 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Droplet, PersonStanding, ArrowLeftRight, ArrowUp, ArrowDown, ArrowRight, Grid2x2, Play, Pause } from 'lucide-react';
 import * as L from 'leaflet';
 import maplibregl from 'maplibre-gl';
-import { GPX_URL, LAP, PACE_SCALE, POIS, TB, TERR, TW, TYPE_LABEL, paceColor, publicUrl, type Poi, type TerrKey } from '../config';
+import { GPX_URL, LAP, PACE_SCALE, POIS, TB, TERR, TW, paceColor, publicUrl, type Poi, type TerrKey } from '../config';
 import { clockDot, fmtP, fmtT, kmL, nb } from '../lib/format';
 import { elevAt, pointAt, type Pt } from '../lib/gpx';
 import { gradeOf, paceOf, type Plan } from '../lib/model';
 import { useActivePlan, useHover } from '../state/active';
 import { useCourse } from '../state/course';
 import { usePlan } from '../state/plan';
+import type { UiCopy } from '../i18n/ui';
+import { useUi } from '../i18n/useUi';
 import { splitMarks, terrOf } from './Splits';
 
 const ATTR = 'Kart © Esri, HERE, Garmin, Intermap, © OpenStreetMap-bidragsytere';
@@ -30,8 +32,8 @@ const FLY_MOVE_MS = 75000;
 const FLY_SPEED = { sakte: 0.35, normal: 0.7, rask: 1.4 } as const;
 type FlySpeed = keyof typeof FLY_SPEED;
 const FLY_PAUSE_MS = 1000;
-function flyRows(full: boolean): { km: number; name: string }[] {
-  const rows = splitMarks(full).filter((m) => m.km > 0.05);
+function flyRows(full: boolean, marks: UiCopy['marks']): { km: number; name: string }[] {
+  const rows = splitMarks(full, marks).filter((m) => m.km > 0.05);
   for (const [km, name] of full ? [[5, '5 km'], [42.194, '42,2 km']] as [number, string][] : [[5, '5 km']] as [number, string][]) {
     if (!rows.some((r) => Math.abs(r.km - km) <= 0.02)) rows.push({ km, name });
   }
@@ -73,19 +75,26 @@ function showPoi(p: Poi, layers: { drink: boolean; toilet: boolean; relay: boole
   );
 }
 
-function popupNode(poi: Poi, lat: number, lng: number, plan: Plan): HTMLElement {
+function popupNode(poi: Poi, lat: number, lng: number, plan: Plan, mapUi: UiCopy['map']): HTMLElement {
   const el = document.createElement('div');
   el.className = 'pop';
   const km = poi.showKm ?? poi.km;
   const head = document.createElement('p');
   head.className = 'pop-km';
-  head.textContent = km == null ? 'Utenfor løypa' : `Km ${kmL(km)}${poi.approx ? ' · plassering omtrentlig' : ''}`;
+  head.textContent =
+    km == null ? mapUi.offCourse : `Km ${kmL(km)}${poi.approx ? mapUi.approxPlacement : ''}`;
   const title = document.createElement('p');
   title.className = 'pop-title';
   title.textContent = poi.n;
   const types = document.createElement('p');
   types.className = 'pop-types';
-  types.textContent = poi.t.map((t) => (t === 'relay' && poi.relay ? `Stafett ${poi.relay}` : TYPE_LABEL[t])).join(' · ');
+  types.textContent = poi.t
+    .map((t) =>
+      t === 'relay' && poi.relay != null
+        ? mapUi.relayFmt.replace('{n}', String(poi.relay))
+        : mapUi.poiType[t],
+    )
+    .join(' · ');
   el.append(head, title, types);
   if (poi.d) {
     const d = document.createElement('p');
@@ -93,24 +102,38 @@ function popupNode(poi: Poi, lat: number, lng: number, plan: Plan): HTMLElement 
     d.textContent = poi.d;
     el.append(d);
   }
+  const planLine = (timeSec: number) =>
+    mapUi.planAt.replace('{time}', fmtT(timeSec)).replace('{clock}', clockDot(plan.input.start, timeSec));
   if (poi.fullOnly) {
-    const t = plan.tAt(21.5);
-    el.append(timeLine(`Plan ${fmtT(t)} kl. ${clockDot(plan.input.start, t)}`));
+    el.append(timeLine(planLine(plan.tAt(21.5))));
   } else if (poi.km != null && !plan.input.full) {
-    const t = plan.tAt(poi.km);
-    el.append(timeLine(`Plan ${fmtT(t)} kl. ${clockDot(plan.input.start, t)}`));
+    el.append(timeLine(planLine(plan.tAt(poi.km))));
   } else if (poi.km != null) {
     const t1 = plan.tAt(poi.km);
     const t2 = plan.tAt(poi.km + LAP);
-    el.append(timeLine(`Runde 1 · km ${kmL(poi.km)} · ${fmtT(t1)} kl. ${clockDot(plan.input.start, t1)}`));
-    el.append(timeLine(`Runde 2 · km ${kmL(poi.km + LAP)} · ${fmtT(t2)} kl. ${clockDot(plan.input.start, t2)}`));
+    el.append(
+      timeLine(
+        mapUi.round1At
+          .replace('{km}', kmL(poi.km))
+          .replace('{time}', fmtT(t1))
+          .replace('{clock}', clockDot(plan.input.start, t1)),
+      ),
+    );
+    el.append(
+      timeLine(
+        mapUi.round2At
+          .replace('{km}', kmL(poi.km + LAP))
+          .replace('{time}', fmtT(t2))
+          .replace('{clock}', clockDot(plan.input.start, t2)),
+      ),
+    );
   }
   const a = document.createElement('a');
   a.className = 'btn primary pop-btn';
   a.href = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
   a.target = '_blank';
   a.rel = 'noopener';
-  a.textContent = 'Åpne i Google Maps';
+  a.textContent = mapUi.openGoogleMaps;
   el.append(a);
   return el;
 }
@@ -172,6 +195,7 @@ export function CourseMap() {
   const { state, patch, setLayer } = usePlan();
   const course = useCourse();
   const { plan } = useActivePlan();
+  const uiCopy = useUi();
   const { km, setKm } = useHover();
   const el2 = useRef<HTMLDivElement>(null);
   const el3 = useRef<HTMLDivElement>(null);
@@ -235,14 +259,16 @@ export function CourseMap() {
       if (!showPoi(poi, state.layers, plan.input.full)) continue;
       const pos = poi.km != null && course.status === 'ok' ? pointAt(pts, poi.km) : { lat: poi.lat, lng: poi.lng };
       const icon = L.divIcon({ className: 'mk-icon', html: markerHtml(poi), iconSize: [28, 28], iconAnchor: [14, 14] });
-      L.marker([pos.lat, pos.lng], { icon }).bindPopup(() => popupNode(poi, pos.lat, pos.lng, plan), { maxWidth: 260, className: 'poi-pop' }).addTo(g);
+      L.marker([pos.lat, pos.lng], { icon })
+        .bindPopup(() => popupNode(poi, pos.lat, pos.lng, plan, uiCopy.map), { maxWidth: 260, className: 'poi-pop' })
+        .addTo(g);
     }
     const id = `${course.name}:${pts.length}`;
     if (fitted2.current !== id) {
       map.fitBounds(L.latLngBounds(pts.map((p) => [p.lat, p.lng] as [number, number])), { padding: [24, 24] });
       fitted2.current = id;
     }
-  }, [plan, course.points, course.status, course.name, state.layers]);
+  }, [plan, course.points, course.status, course.name, state.layers, uiCopy.map]);
 
   useEffect(() => {
     if (!state.view3d || map3.current || !el3.current) return;
@@ -317,7 +343,11 @@ export function CourseMap() {
         const pos = poi.km != null && course.status === 'ok' ? pointAt(pts, poi.km) : { lat: poi.lat, lng: poi.lng };
         return new maplibregl.Marker({ element: markerHtml(poi), anchor: 'center', subpixelPositioning: true })
           .setLngLat([pos.lng, pos.lat])
-          .setPopup(new maplibregl.Popup({ offset: 16, maxWidth: '260px' }).setDOMContent(popupNode(poi, pos.lat, pos.lng, plan)))
+          .setPopup(
+            new maplibregl.Popup({ offset: 16, maxWidth: '260px' }).setDOMContent(
+              popupNode(poi, pos.lat, pos.lng, plan, uiCopy.map),
+            ),
+          )
           .addTo(map);
       });
       const id = `${course.name}:${pts.length}`;
@@ -330,7 +360,7 @@ export function CourseMap() {
     };
     if (map.isStyleLoaded()) draw();
     else map.once('load', draw);
-  }, [plan, course.points, course.status, course.name, state.layers, state.view3d]);
+  }, [plan, course.points, course.status, course.name, state.layers, state.view3d, uiCopy.map]);
 
   useEffect(() => {
     const map = map2.current;
@@ -437,35 +467,39 @@ export function CourseMap() {
       <div className="wrap">
         <div className="section-head">
           <div>
-            <h2>Løypekart</h2>
-            <p className="intro">Eksakt trasé fra {course.name}, fargelagt etter målfart. Trykk på en markør for navn, km og din planlagte mellomtid.</p>
+            <h2>{uiCopy.map.h2}</h2>
+            <p className="intro">{uiCopy.map.intro.replace('{name}', course.name)}</p>
           </div>
-          <div className="pills" role="group" aria-label="Kartlag">
-            <Layer on={state.layers.drink} label="Drikke" icon={<Droplet size={16} />} onClick={() => setLayer('drink', !state.layers.drink)} />
-            <Layer on={state.layers.toilet} label="Toalett" icon={<PersonStanding size={16} />} onClick={() => setLayer('toilet', !state.layers.toilet)} />
-            <Layer on={state.layers.relay} label="Stafettveksling" icon={<ArrowLeftRight size={16} />} onClick={() => setLayer('relay', !state.layers.relay)} />
-            <Layer on={state.layers.terrain} label="Bratt og brostein" icon={<ArrowUp size={16} />} onClick={() => setLayer('terrain', !state.layers.terrain)} />
+          <div className="pills" role="group" aria-label={uiCopy.map.layers}>
+            <Layer on={state.layers.drink} label={uiCopy.map.drink} icon={<Droplet size={16} />} onClick={() => setLayer('drink', !state.layers.drink)} />
+            <Layer on={state.layers.toilet} label={uiCopy.map.toilet} icon={<PersonStanding size={16} />} onClick={() => setLayer('toilet', !state.layers.toilet)} />
+            <Layer on={state.layers.relay} label={uiCopy.map.relay} icon={<ArrowLeftRight size={16} />} onClick={() => setLayer('relay', !state.layers.relay)} />
+            <Layer on={state.layers.terrain} label={uiCopy.map.terrain} icon={<ArrowUp size={16} />} onClick={() => setLayer('terrain', !state.layers.terrain)} />
           </div>
         </div>
         <div className="map-shell">
-          <div className="map-switch" role="group" aria-label="Kartvisning">
-            <button type="button" aria-pressed={!state.view3d} onClick={() => patch({ view3d: false })}>2D</button>
-            <button type="button" aria-pressed={state.view3d} onClick={() => patch({ view3d: true })}>3D</button>
+          <div className="map-switch" role="group" aria-label={uiCopy.map.mapView}>
+            <button type="button" aria-pressed={!state.view3d} onClick={() => patch({ view3d: false })}>
+              {uiCopy.map.view2d}
+            </button>
+            <button type="button" aria-pressed={state.view3d} onClick={() => patch({ view3d: true })}>
+              {uiCopy.map.view3d}
+            </button>
           </div>
           <div ref={el2} className="map-2d" hidden={state.view3d} />
           <div ref={el3} className="map-3d" hidden={!state.view3d} />
-          {course.status === 'estimated' && <p className="map-overlay">Omtrentlig trasé</p>}
+          {course.status === 'estimated' && <p className="map-overlay">{uiCopy.map.estimated}</p>}
           <div className="fly-bar">
           {playing && plan && (
             <div className="fly-hud" aria-live="polite">
-              <p className="fly-label">Tid</p>
+              <p className="fly-label">{uiCopy.map.time}</p>
               <p className="fly-time">{fmtT(plan.tAt(km ?? 0))}</p>
               <p className="fly-km">{nb(km ?? 0, 1)} km</p>
-              {flyPause && <p className="fly-stop">Drikke</p>}
+              {flyPause && <p className="fly-stop">{uiCopy.map.drinkPause}</p>}
               <ul>
                 {(() => {
                   const here = km ?? 0;
-                  const rows = flyRows(plan.input.full).filter((m) => m.km <= plan.D + 0.02);
+                  const rows = flyRows(plan.input.full, uiCopy.marks).filter((m) => m.km <= plan.D + 0.02);
                   let hit = -1;
                   for (let i = 0; i < rows.length; i++) if (here + 0.02 >= rows[i].km) hit = i;
                   if (hit < 0) return null;
@@ -479,7 +513,8 @@ export function CourseMap() {
                   const ref = hit === 0 ? plan.p0 : paceOf(plan.agg(hit < 2 ? 0 : rows[hit - 2].km, a));
                   const trend = paceTrend(pace, ref);
                   const PaceIcon = trend === 'up' ? ArrowUp : trend === 'down' ? ArrowDown : ArrowRight;
-                  const paceLabel = trend === 'up' ? 'Raskere' : trend === 'down' ? 'Tregere' : 'Jevnt';
+                  const paceLabel =
+                    trend === 'up' ? uiCopy.map.faster : trend === 'down' ? uiCopy.map.slower : uiCopy.map.even;
                   return (
                     <li key={`${m.km}-${m.name}`} className="is-on">
                       <span className="fly-name">
@@ -488,7 +523,7 @@ export function CourseMap() {
                       </span>
                       <span className="fly-tags">
                         <span className="chip" style={{ background: meta.chipBg, color: meta.chipFg }}>
-                          <Icon size={12} strokeWidth={2} /> {meta.l}
+                          <Icon size={12} strokeWidth={2} /> {uiCopy.terrain[terr]}
                         </span>
                         <span className={`chip pace-${trend}`}>
                           <PaceIcon size={12} strokeWidth={2} /> {paceLabel} {fmtP(pace)}
@@ -512,35 +547,50 @@ export function CourseMap() {
                 } else setHeld((v) => !v);
               }}
             >
-              {!playing || held ? <Play size={16} /> : <Pause size={16} />} {!playing ? 'Fly langs løypa' : held ? 'Fortsett' : 'Pause'}
+              {!playing || held ? <Play size={16} /> : <Pause size={16} />}{' '}
+              {!playing ? uiCopy.map.flyPlay : held ? uiCopy.map.flyResume : uiCopy.map.flyPause}
             </button>
-            <div className="seg fly-speed" role="group" aria-label="Animasjonsfart">
-              {(['sakte', 'normal', 'rask'] as const).map((id) => (
+            <div className="seg fly-speed" role="group" aria-label={uiCopy.map.flySpeed}>
+              {(
+                [
+                  ['sakte', uiCopy.map.flySlow],
+                  ['normal', uiCopy.map.flyNormal],
+                  ['rask', uiCopy.map.flyFast],
+                ] as const
+              ).map(([id, label]) => (
                 <button key={id} type="button" aria-pressed={flySpeed === id} onClick={() => setFlySpeed(id)}>
-                  {id === 'sakte' ? 'Sakte' : id === 'normal' ? 'Normal' : 'Rask'}
+                  {label}
                 </button>
               ))}
             </div>
             </div>
           </div>
           <div className="map-legend">
-            <p>Målfart mot flatfart</p>
-            {PACE_SCALE.map((s) => (
-              <div key={s.l}><i style={{ background: s.c }} /> {s.l}</div>
+            <p>{uiCopy.map.paceLegend}</p>
+            {PACE_SCALE.map((s, i) => (
+              <div key={s.max}>
+                <i style={{ background: s.c }} /> {uiCopy.map.paceScale[i]}
+              </div>
             ))}
           </div>
         </div>
         <p className="map-actions">
-          <a className="btn secondary" href={GPX_URL} download>Last ned GPX</a>
+          <a className="btn secondary" href={GPX_URL} download>
+            {uiCopy.map.downloadGpx}
+          </a>
         </p>
-        <p className="help">Løypa tegnes eksakt fra GPX-filen. Kart, flyfoto og terreng ligger lokalt i guiden og fungerer uten nøkler eller eksterne tjenester.</p>
+        <p className="help">{uiCopy.map.helpLocal}</p>
         {plan && (
           <details className="explain">
-            <summary>Løypen som tabell</summary>
+            <summary>{uiCopy.map.tableSummary}</summary>
             <div className="table-wrap">
               <table className="data">
                 <thead>
-                  <tr><th scope="col">Km</th><th scope="col">Nærmeste sted</th><th scope="col">Høyde</th></tr>
+                  <tr>
+                    <th scope="col">{uiCopy.map.tableKm}</th>
+                    <th scope="col">{uiCopy.map.tableNear}</th>
+                    <th scope="col">{uiCopy.map.tableElev}</th>
+                  </tr>
                 </thead>
                 <tbody>
                   {Array.from({ length: 23 }, (_, i) => Math.min(LAP, i)).map((k) => {
@@ -549,7 +599,9 @@ export function CourseMap() {
                       <tr key={k}>
                         <th scope="row">{kmL(k)}</th>
                         <td>{near?.n}</td>
-                        <td>{Math.round(elevAt(course.points, k))} moh</td>
+                        <td>
+                          {Math.round(elevAt(course.points, k))} {uiCopy.elevationPanel.moh}
+                        </td>
                       </tr>
                     );
                   })}

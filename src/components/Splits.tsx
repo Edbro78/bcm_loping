@@ -5,7 +5,6 @@ import {
   BAND_HALF,
   CP,
   FULL_EXTRA_STATION,
-  HILLS,
   LAP,
   REF_COLS_FULL,
   REF_COLS_HALF,
@@ -21,31 +20,35 @@ import { PaceChartCard } from './chart';
 import { useActivePlan } from '../state/active';
 import { useCourse } from '../state/course';
 import { StepContinue } from './StepContinue';
+import type { UiCopy } from '../i18n/ui';
 import { useUi } from '../i18n/useUi';
+import { usePreviewLocale } from '../state/previewLocale';
 import { scrollToView, usePlan } from '../state/plan';
 
 type Mark = { km: number; name: string };
 
-export function splitMarks(full: boolean): Mark[] {
-  const rows: Mark[] = [{ km: 0, name: 'Start' }];
+export function splitMarks(full: boolean, marks: UiCopy['marks']): Mark[] {
+  const rows: Mark[] = [{ km: 0, name: marks.start }];
   if (!full) {
     for (const [km, name] of CP) rows.push({ km, name });
   } else {
     for (const [km, name] of CP) {
-      rows.push({ km, name: Math.abs(km - LAP) < 0.02 ? 'Halvveis · cut-off' : name });
+      rows.push({ km, name: Math.abs(km - LAP) < 0.02 ? marks.halfwayCutoff : name });
     }
-    rows.push({ km: FULL_EXTRA_STATION, name: 'Drikke Bryggen' });
+    rows.push({ km: FULL_EXTRA_STATION, name: marks.drinkBryggen });
     for (const [km, name] of CP) {
-      rows.push({ km: km + LAP, name: Math.abs(km - LAP) < 0.02 ? 'Mål' : name });
+      rows.push({ km: km + LAP, name: Math.abs(km - LAP) < 0.02 ? marks.finish : name });
     }
-    for (const k of [25, 30, 35, 40]) rows.push({ km: k, name: `${k} km` });
+    for (const k of [25, 30, 35, 40]) rows.push({ km: k, name: marks.km.replace('{n}', String(k)) });
   }
   rows.sort((a, b) => a.km - b.km);
   const out: Mark[] = [];
   for (const r of rows) {
     const prev = out[out.length - 1];
     if (prev && Math.abs(prev.km - r.km) <= 0.02) {
-      if (/Halvveis|Mål|Bryggen/.test(r.name)) prev.name = r.name;
+      if (r.name === marks.halfwayCutoff || r.name === marks.finish || r.name === marks.drinkBryggen) {
+        prev.name = r.name;
+      }
       continue;
     }
     out.push({ ...r });
@@ -68,7 +71,8 @@ export function Splits() {
   const { state, patch } = usePlan();
   const { plan } = useActivePlan();
   const course = useCourse();
-  if (!plan) return <p className="intro">Laster mellomtider…</p>;
+  const m = useUi();
+  if (!plan) return <p className="intro">{m.splits.loading}</p>;
 
   function goToMilepaeler() {
     patch({ view: 'mile' });
@@ -77,18 +81,18 @@ export function Splits() {
 
   return (
     <section className="section" aria-labelledby="mellom-tittel">
-      <h2 id="mellom-tittel">Anbefalt løpeplan</h2>
+      <h2 id="mellom-tittel">{m.splits.h2}</h2>
       <div className="legend-row" aria-hidden="true">
-        <span><i className="swatch pace" /> Målfart</span>
-        <span><i className="swatch gap" /> GAP</span>
-        <span><i className="swatch elev" /> Høyde</span>
+        <span><i className="swatch pace" /> {m.splits.legendPace}</span>
+        <span><i className="swatch gap" /> {m.splits.legendGap}</span>
+        <span><i className="swatch elev" /> {m.splits.legendElev}</span>
       </div>
       <PaceChartCard plan={plan} points={course.points} />
-      <div className="subtabs" role="tablist" aria-label="Mellomtider">
+      <div className="subtabs" role="tablist" aria-label={m.splits.tablist}>
         {(
           [
-            ['seg', 'Segmenter'],
-            ['km', 'Per km'],
+            ['seg', m.splits.tabSeg],
+            ['km', m.splits.tabKm],
           ] as const
         ).map(([id, label]) => (
           <button key={id} type="button" role="tab" aria-selected={state.tab === id} className={state.tab === id ? 'is-on' : ''} onClick={() => patch({ tab: id })}>
@@ -96,22 +100,27 @@ export function Splits() {
           </button>
         ))}
       </div>
-      {state.tab === 'seg' && <Segments plan={plan} />}
-      {state.tab === 'km' && <PerKm plan={plan} />}
-      <Reference plan={plan} points={course.points} />
-      <StepContinue
-        id="splits-step-continue"
-        step={4}
-        label="Anbefalte milepæler siste 90 dager"
-        onClick={goToMilepaeler}
-      />
+      {state.tab === 'seg' && <Segments plan={plan} marks={m.marks} terrain={m.terrain} copy={m.splits} />}
+      {state.tab === 'km' && <PerKm plan={plan} copy={m.splits} />}
+      <Reference plan={plan} points={course.points} copy={m.splits} marks={m.marks} />
+      <StepContinue id="splits-step-continue" step={4} onClick={goToMilepaeler} />
     </section>
   );
 }
 
-function Segments({ plan }: { plan: Plan }) {
+function Segments({
+  plan,
+  marks,
+  terrain,
+  copy,
+}: {
+  plan: Plan;
+  marks: UiCopy['marks'];
+  terrain: UiCopy['terrain'];
+  copy: UiCopy['splits'];
+}) {
   const full = plan.input.full;
-  const m = splitMarks(full);
+  const m = splitMarks(full, marks);
   const segs = [];
   for (let i = 1; i < m.length; i++) segs.push({ a: m[i - 1].km, b: m[i].km, name: m[i].name });
   const r1 = segs.filter((s) => s.b <= LAP + 0.001);
@@ -130,8 +139,10 @@ function Segments({ plan }: { plan: Plan }) {
       <tr key={`${s.a}-${s.name}`} style={{ background: meta.bg }}>
         <th scope="row">
           <span className="seg-name">{s.name}</span>
-          <span className="chip" style={{ background: meta.chipBg, color: meta.chipFg }}>{meta.l}</span>
-          <span className="km-range">km {kmL(s.a)}–{kmL(s.b)}</span>
+          <span className="chip" style={{ background: meta.chipBg, color: meta.chipFg }}>{terrain[terr]}</span>
+          <span className="km-range">
+            {copy.kmRange.replace('{a}', kmL(s.a)).replace('{b}', kmL(s.b))}
+          </span>
         </th>
         <td>{Math.round(g.len * 1000)}</td>
         <td>{sgn(grade)}</td>
@@ -168,15 +179,15 @@ function Segments({ plan }: { plan: Plan }) {
     <>
       <div className="chips">
         {(Object.keys(TERR) as TerrKey[]).map((k) => (
-          <span key={k} className="chip" style={{ background: TERR[k].chipBg, color: TERR[k].chipFg }}>{TERR[k].l}</span>
+          <span key={k} className="chip" style={{ background: TERR[k].chipBg, color: TERR[k].chipFg }}>{terrain[k]}</span>
         ))}
-        <span className="help">Avvik = kumulativ tid mot jevn snittfart hele veien.</span>
+        <span className="help">{copy.devHelp}</span>
       </div>
       <div className="table-wrap">
         <table className="data">
           <thead>
             <tr>
-              {['Segment', 'Lengde (m)', 'Stigning (%)', 'Opp / ned', 'Segmenttid', 'Fart', 'GAP', 'Kumulativ', 'Klokke', 'Avvik'].map((h) => (
+              {copy.segHeaders.map((h) => (
                 <th key={h} scope="col">{h}</th>
               ))}
             </tr>
@@ -184,12 +195,12 @@ function Segments({ plan }: { plan: Plan }) {
           <tbody>
             {full ? (
               <>
-                <tr className="round"><th colSpan={10}>Runde 1</th></tr>
+                <tr className="round"><th colSpan={10}>{copy.round1}</th></tr>
                 {r1.map(row)}
-                {sum(0, LAP, 'Sum runde 1')}
-                <tr className="round"><th colSpan={10}>Runde 2</th></tr>
+                {sum(0, LAP, copy.sumRound1)}
+                <tr className="round"><th colSpan={10}>{copy.round2}</th></tr>
                 {r2.map(row)}
-                {sum(LAP, plan.D, 'Sum runde 2')}
+                {sum(LAP, plan.D, copy.sumRound2)}
               </>
             ) : (
               segs.map(row)
@@ -201,7 +212,7 @@ function Segments({ plan }: { plan: Plan }) {
   );
 }
 
-function PerKm({ plan }: { plan: Plan }) {
+function PerKm({ plan, copy }: { plan: Plan; copy: UiCopy['splits'] }) {
   const rows = [];
   for (let a = 0; a < plan.D - 1e-6; a += 1) {
     const b = Math.min(plan.D, a + 1);
@@ -218,7 +229,7 @@ function PerKm({ plan }: { plan: Plan }) {
       <table className="data km">
         <thead>
           <tr>
-            {['Km', 'Stigning', 'Høydeendr.', 'GAP-faktor', 'Målfart', 'GAP', 'Kumulativ', 'Klokke', 'Drikke'].map((h) => (
+            {copy.kmHeaders.map((h) => (
               <th key={h} scope="col">{h}</th>
             ))}
           </tr>
@@ -231,7 +242,7 @@ function PerKm({ plan }: { plan: Plan }) {
               <Fragment key={r.a}>
                 {band && (
                   <tr className="cut-band">
-                    <td colSpan={9}>Halvveis · cut-off kl. 10.45 på Bryggen</td>
+                    <td colSpan={9}>{copy.cutBand}</td>
                   </tr>
                 )}
                 <tr className={r.steep ? 'steep' : ''}>
@@ -243,12 +254,16 @@ function PerKm({ plan }: { plan: Plan }) {
                   <td>{fmtP(r.gap)}</td>
                   <td>{fmtT(cum)}</td>
                   <td>{clockS(plan.input.start, cum)}</td>
-                  <td>{r.g.stops > 0 && <span className="drop"><Droplet size={14} /> +{Math.round(r.g.stops)} s</span>}</td>
+                  <td>{r.g.stops > 0 && <span className="drop"><Droplet size={14} /> {copy.drinkSec.replace('{sec}', String(Math.round(r.g.stops)))}</span>}</td>
                 </tr>
                 {r.steep && (
                   <tr className="steep-note">
                     <td colSpan={9}>
-                      Km {r.label}: {sgn(r.grade)} % → {fmtP(r.pace)}/km tilsvarer {fmtP(r.gap)}/km flatt
+                      {copy.steepNote
+                        .replace('{km}', r.label)
+                        .replace('{grade}', sgn(r.grade))
+                        .replace('{pace}', fmtP(r.pace))
+                        .replace('{gap}', fmtP(r.gap))}
                     </td>
                   </tr>
                 )}
@@ -278,18 +293,19 @@ export function ArmbandPrintButton({ className = '', variant = 'band' }: Armband
 }
 
 export function ArmbandCard({ plan }: { plan: Plan }) {
+  const ui = useUi();
   const rows = plan.input.full ? BAND_FULL : BAND_HALF;
-  const hill = HILLS[plan.input.hill].l;
-  const split = plan.input.split === 'jevn' ? 'jevn' : plan.input.split;
+  const hill = ui.hills[plan.input.hill].label;
+  const split = ui.split[plan.input.split];
   return (
     <article id="armband" className="oppsummering-armband">
       <header>
-        <p>BCM 2027 · {plan.input.full ? 'Maraton' : 'Halvmaraton'}</p>
+        <p>BCM 2027 · {plan.input.full ? ui.common.full : ui.common.half}</p>
         <b>{fmtT(plan.input.T)}</b>
       </header>
       <ul>
         {rows.map(([km, name]) => {
-          const hi = /Halvveis|Mål/.test(name);
+          const hi = name === ui.marks.halfwayCutoff || name === ui.marks.finish || /Halvveis|Mål|Halfway|Finish/.test(name);
           return (
             <li key={name + km} className={hi ? 'hi' : ''}>
               <span>
@@ -304,9 +320,12 @@ export function ArmbandCard({ plan }: { plan: Plan }) {
       </ul>
       <footer>
         <span>
-          Flat {fmtP(plan.p0)}/km · {hill}, {split}
+          {ui.splits.armbandFlat
+            .replace('{pace}', fmtP(plan.p0))
+            .replace('{hill}', hill)
+            .replace('{split}', split)}
         </span>
-        <span>Start {plan.input.start.replace(':', '.')}</span>
+        <span>{ui.splits.armbandStart.replace('{time}', plan.input.start.replace(':', '.'))}</span>
       </footer>
     </article>
   );
@@ -323,56 +342,72 @@ function Band({ plan }: { plan: Plan }) {
 
 export function Wristband() {
   const { plan } = useActivePlan();
-  if (!plan) return <p className="intro">Laster armbåndskort…</p>;
+  const m = useUi();
+  if (!plan) return <p className="intro">{m.splits.wristLoading}</p>;
   return (
     <section className="section" aria-labelledby="band-tittel">
-      <h2 id="band-tittel">Armbåndskort</h2>
-      <p className="intro">Mellomtidene på et kort du kan skrive ut og ha på armen.</p>
+      <h2 id="band-tittel">{m.splits.wristH2}</h2>
+      <p className="intro">{m.splits.wristIntro}</p>
       <Band plan={plan} />
     </section>
   );
 }
 
-function Reference({ plan, points }: { plan: Plan; points: Pt[] }) {
+function Reference({
+  plan,
+  points,
+  copy,
+  marks,
+}: {
+  plan: Plan;
+  points: Pt[];
+  copy: UiCopy['splits'];
+  marks: UiCopy['marks'];
+}) {
+  const { locale } = usePreviewLocale();
   const full = plan.input.full;
   const targets = full ? REF_FULL : REF_HALF;
   const cols = full ? REF_COLS_FULL : REF_COLS_HALF;
   const rows = targets.map((T) => {
-    const p = buildPlan((k) => elevAt(points, k), {
-      full,
-      T,
-      split: 'jevn',
-      sigma: 0,
-      hill: 'middels',
-      stopSec: 2,
-      start: plan.input.start,
-    });
+    const p = buildPlan(
+      (k) => elevAt(points, k),
+      {
+        full,
+        T,
+        split: 'jevn',
+        sigma: 0,
+        hill: 'middels',
+        stopSec: 2,
+        start: plan.input.start,
+      },
+      locale,
+    );
     return { T, p };
   });
   const strategies = full
     ? ([
-        ['Middels, jevn', 'middels', 'jevn', 0],
-        ['Sakte, jevn', 'sakte', 'jevn', 0],
-        ['Fort, jevn', 'fort', 'jevn', 0],
-        ['Middels, negativ 2 %', 'middels', 'negativ', 2],
-        ['Sakte, negativ 2 %', 'sakte', 'negativ', 2],
-        ['Middels, positiv 2 %', 'middels', 'positiv', 2],
+        [copy.sub3Strategies[0], 'middels', 'jevn', 0],
+        [copy.sub3Strategies[1], 'sakte', 'jevn', 0],
+        [copy.sub3Strategies[2], 'fort', 'jevn', 0],
+        [copy.sub3Strategies[3], 'middels', 'negativ', 2],
+        [copy.sub3Strategies[4], 'sakte', 'negativ', 2],
+        [copy.sub3Strategies[5], 'middels', 'positiv', 2],
       ] as const)
     : [];
 
   return (
     <details className="explain">
-      <summary>Referansetabell</summary>
-      <p className="help">Middels, jevn, drikke av. Raden nærmest målet ditt er markert.</p>
+      <summary>{copy.refTitle}</summary>
+      <p className="help">{copy.refHelp}</p>
       <div className="table-wrap">
         <table className="data">
           <thead>
             <tr>
-              <th scope="col">Mål</th>
+              <th scope="col">{copy.refGoal}</th>
               {cols.map((c) => (
-                <th key={c} scope="col">{Math.abs(c - (full ? LAP * 2 : LAP)) < 0.01 ? 'Mål' : kmL(c)}</th>
+                <th key={c} scope="col">{Math.abs(c - (full ? LAP * 2 : LAP)) < 0.01 ? marks.finish : kmL(c)}</th>
               ))}
-              <th scope="col">Flatfart</th>
+              <th scope="col">{copy.refFlat}</th>
             </tr>
           </thead>
           <tbody>
@@ -390,29 +425,33 @@ function Reference({ plan, points }: { plan: Plan; points: Pt[] }) {
       </div>
       {full && (
         <>
-          <h3>Strategier for sub 3:00</h3>
+          <h3>{copy.sub3Title}</h3>
           <div className="table-wrap">
             <table className="data">
               <thead>
                 <tr>
-                  <th scope="col">Strategi</th>
-                  <th scope="col">5 km</th>
-                  <th scope="col">10 km</th>
-                  <th scope="col">21,1 km</th>
-                  <th scope="col">Flatfart</th>
+                  <th scope="col">{copy.sub3Strategy}</th>
+                  <th scope="col">{copy.sub3Km5}</th>
+                  <th scope="col">{copy.sub3Km10}</th>
+                  <th scope="col">{copy.sub3Km211}</th>
+                  <th scope="col">{copy.refFlat}</th>
                 </tr>
               </thead>
               <tbody>
                 {strategies.map(([label, hill, split, sigma]) => {
-                  const p = buildPlan((k) => elevAt(points, k), {
-                    full: true,
-                    T: 10800,
-                    split,
-                    sigma,
-                    hill,
-                    stopSec: 2,
-                    start: '07:45',
-                  });
+                  const p = buildPlan(
+                    (k) => elevAt(points, k),
+                    {
+                      full: true,
+                      T: 10800,
+                      split,
+                      sigma,
+                      hill,
+                      stopSec: 2,
+                      start: '07:45',
+                    },
+                    locale,
+                  );
                   return (
                     <tr key={label}>
                       <th scope="row">{label}</th>

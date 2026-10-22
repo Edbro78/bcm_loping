@@ -279,10 +279,15 @@ function Spark() {
         pointerEvents="none"
         transform={`translate(${X(0)},${Y(elevAt(course.points, 0)) - runnerGap})`}
       >
-        <circle className="runner-head" cx="0" cy="-22" r="4" />
+        <circle className="runner-head" cx="0" cy="-22" r="4" fill="#fff" stroke="#c43d0a" strokeWidth={1.25} />
         <path
           className="runner-body"
           d="M0 -18 V -9 M0 -15.5 L -8 -12 M0 -15.5 L 8 -12 M0 -9 L -7 0 M0 -9 L 7 0"
+          fill="none"
+          stroke="#fff"
+          strokeWidth={3}
+          strokeLinecap="round"
+          strokeLinejoin="round"
         />
       </g>
       <text ref={labelRef} className="spark-km" x={X(0) + 10} y={12}>
