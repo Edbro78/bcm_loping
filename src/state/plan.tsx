@@ -32,7 +32,7 @@ export const PLAN_DEFAULT: PlanState = {
   startHalf: '09:00',
   startFull: '07:45',
   tab: 'seg',
-  view: 'plan',
+  view: 'distanse',
   layers: { drink: true, toilet: true, relay: true, terrain: true },
   view3d: false,
 };

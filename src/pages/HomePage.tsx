@@ -10,7 +10,7 @@ import { TabBar } from '../components/TabBar';
 import { OppsummeringPage } from '../components/OppsummeringPage';
 import { TempoPlan } from '../components/TempoPlan';
 import { useUi } from '../i18n/useUi';
-import { useEffect } from 'react';
+import { useLayoutEffect } from 'react';
 import { usePlan } from '../state/plan';
 
 function DashboardPanels() {
@@ -82,13 +82,21 @@ function HomeIntro() {
 }
 
 export function HomePage() {
-  const { state } = usePlan();
+  const { state, patch } = usePlan();
 
-  useEffect(() => {
-    const frame = document.querySelector('.preview-phone-frame');
-    if (frame instanceof HTMLElement) frame.scrollTop = 0;
-    else window.scrollTo(0, 0);
-  }, []);
+  useLayoutEffect(() => {
+    if (typeof history !== 'undefined' && 'scrollRestoration' in history) {
+      history.scrollRestoration = 'manual';
+    }
+    patch({ view: 'distanse' });
+    const scrollTop = () => {
+      const frame = document.querySelector('.preview-phone-frame');
+      if (frame instanceof HTMLElement) frame.scrollTop = 0;
+      else window.scrollTo(0, 0);
+    };
+    scrollTop();
+    requestAnimationFrame(() => requestAnimationFrame(scrollTop));
+  }, [patch]);
 
   return (
     <>
