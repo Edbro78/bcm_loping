@@ -131,6 +131,8 @@ function Spark() {
   const W = 1000;
   const H = 78;
   const pad = 48;
+  /** Luft mellom hvit prikk og strekmann (viewBox-enheter). */
+  const runnerGap = 12;
   const pts = course.points.filter((_, i) => i % 4 === 0);
   const Y = (e: number) => 8 + (1 - Math.min(e, 150) / 150) * 46;
   const X = (k: number) => pad + (k / LAP) * (W - pad * 2);
@@ -149,20 +151,18 @@ function Spark() {
       run.style.strokeDashoffset = `${len * (1 - clamped)}`;
       const at = Math.max(0, len * clamped - 0.01);
       const p = run.getPointAtLength(at);
-      const ahead = run.getPointAtLength(Math.min(len, at + 4));
-      const angle = (Math.atan2(ahead.y - p.y, ahead.x - p.x) * 180) / Math.PI;
       dot.setAttribute('cx', p.x.toFixed(1));
       dot.setAttribute('cy', p.y.toFixed(1));
       runnerFig?.setAttribute(
         'transform',
-        `translate(${p.x.toFixed(1)},${p.y.toFixed(1)}) rotate(${angle.toFixed(2)})`,
+        `translate(${p.x.toFixed(1)},${(p.y - runnerGap).toFixed(1)})`,
       );
       if (label) {
         const km = (clamped * LAP).toFixed(1).replace('.', ',');
         label.textContent = `${km} km`;
         const flip = p.x > W * 0.78;
         label.setAttribute('x', (flip ? p.x - 10 : p.x + 10).toFixed(1));
-        label.setAttribute('y', Math.max(12, p.y - 26).toFixed(1));
+        label.setAttribute('y', Math.max(12, p.y - runnerGap - 30).toFixed(1));
         label.setAttribute('text-anchor', flip ? 'end' : 'start');
       }
       svgRef.current?.setAttribute('aria-valuenow', String(Math.round(clamped * LAP * 10) / 10));
@@ -217,6 +217,7 @@ function Spark() {
       ref={svgRef}
       className="spark"
       viewBox={`0 0 ${W} ${H}`}
+      overflow="visible"
       role="slider"
       aria-label={m.hero.sparkAria}
       aria-valuemin={0}
@@ -271,21 +272,18 @@ function Spark() {
         );
       })}
       <circle ref={dotRef} className="runner" r={5.5} cx={X(0)} cy={Y(elevAt(course.points, 0))} />
-      <g ref={runnerFigRef} className="runner-fig" aria-hidden="true" pointerEvents="none">
-        <circle className="runner-head" cx="0" cy="-16" r="3.2" />
-        <path className="runner-limb" d="M0 -12.5 V -5.5" />
-        <g className="runner-arm runner-arm--a" transform="translate(0,-10.5)">
-          <path className="runner-limb" d="M0 0 L 4.5 3.5" />
-        </g>
-        <g className="runner-arm runner-arm--b" transform="translate(0,-10.5)">
-          <path className="runner-limb" d="M0 0 L -3.5 2.5" />
-        </g>
-        <g className="runner-leg runner-leg--a" transform="translate(0,-5.5)">
-          <path className="runner-limb" d="M0 0 L 5 5.5" />
-        </g>
-        <g className="runner-leg runner-leg--b" transform="translate(0,-5.5)">
-          <path className="runner-limb" d="M0 0 L -4.5 5.5" />
-        </g>
+      <g
+        ref={runnerFigRef}
+        className="runner-fig"
+        aria-hidden="true"
+        pointerEvents="none"
+        transform={`translate(${X(0)},${Y(elevAt(course.points, 0)) - runnerGap})`}
+      >
+        <circle className="runner-head" cx="0" cy="-22" r="4" />
+        <path
+          className="runner-body"
+          d="M0 -18 V -9 M0 -15.5 L -8 -12 M0 -15.5 L 8 -12 M0 -9 L -7 0 M0 -9 L 7 0"
+        />
       </g>
       <text ref={labelRef} className="spark-km" x={X(0) + 10} y={12}>
         0,0 km

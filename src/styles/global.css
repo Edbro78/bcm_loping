@@ -574,45 +574,28 @@ html.preview-mobile { background: #12161c; }
 .btn.ghost { background: transparent; color: #fff; border-color: rgb(255 255 255 / 0.35); }
 .btn.ghost:hover { background: #fff; color: var(--c-fjord); }
 .btn.text { background: transparent; color: var(--c-bcm); border: 0; padding: 0 8px; }
-.spark { display: block; width: min(1200px, 100%); margin: 28px auto 0; height: 78px; cursor: pointer; touch-action: none; }
+.spark {
+  display: block;
+  width: min(1200px, 100%);
+  margin: 28px auto 0;
+  height: 78px;
+  overflow: visible;
+  cursor: pointer;
+  touch-action: none;
+}
 .spark path { fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
 .spark path.track { stroke: rgb(255 255 255 / 0.22); }
 .spark path.run { stroke: #fff; }
 .spark circle { fill: #fff; }
 .spark .runner { fill: #fff; stroke: var(--c-bcm-700); stroke-width: 2; }
-.spark .runner-fig { transform-box: fill-box; transform-origin: 0 0; }
-.spark .runner-head { fill: #fff; stroke: var(--c-bcm-700); stroke-width: 1.5; }
-.spark .runner-limb {
+.spark .runner-fig { pointer-events: none; }
+.spark .runner-fig .runner-head { fill: #fff; stroke: none; }
+.spark .runner-fig .runner-body {
   fill: none;
   stroke: #fff;
-  stroke-width: 2.25;
+  stroke-width: 3;
   stroke-linecap: round;
   stroke-linejoin: round;
-}
-.spark .runner-leg,
-.spark .runner-arm {
-  transform-box: fill-box;
-  transform-origin: 0 0;
-}
-.spark .runner-leg--a { animation: spark-runner-leg 0.32s ease-in-out infinite; }
-.spark .runner-leg--b { animation: spark-runner-leg 0.32s ease-in-out infinite reverse; }
-.spark .runner-arm--a { animation: spark-runner-arm 0.32s ease-in-out infinite reverse; }
-.spark .runner-arm--b { animation: spark-runner-arm 0.32s ease-in-out infinite; }
-@keyframes spark-runner-leg {
-  0%, 100% { transform: rotate(-38deg); }
-  50% { transform: rotate(42deg); }
-}
-@keyframes spark-runner-arm {
-  0%, 100% { transform: rotate(32deg); }
-  50% { transform: rotate(-28deg); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .spark .runner-leg--a,
-  .spark .runner-leg--b,
-  .spark .runner-arm--a,
-  .spark .runner-arm--b { animation: none; }
-  .spark .runner-leg--a { transform: rotate(-18deg); }
-  .spark .runner-leg--b { transform: rotate(22deg); }
 }
 .spark text { fill: rgb(255 255 255 / 0.75); font-size: 13px; font-weight: 600; }
 .spark .spark-km { fill: #fff; font-size: 12px; font-weight: 650; }
